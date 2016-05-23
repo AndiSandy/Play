@@ -19,10 +19,11 @@
 	<script type="text/javascript" src="game.js"></script>
 </head>
 <body ng-controller="playCtrl">
-	<h1>hello world-{{title}}</h1>
+	<h1>hello world-{{title}}<input type="text" name="yund" ng-model="yund"/>
+	<a href="javascript:void(0);" ng-click="game.play(yund)">play</a></h1>
 	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span></div>
 	<div>
-		<span class="rate rate-{{cssMap[rate]}}" ng-repeat="rate in game.rateArr track by $index">{{rate||'.'}}</span>
+		<span class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index" title="{{rate||'.'}}">.</span>
 	</div>
 </body>
 </html>
