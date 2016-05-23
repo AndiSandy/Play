@@ -22,7 +22,7 @@
 	<h1>hello world-{{title}}<input type="text" name="yund" ng-model="yund"/>
 	<a href="javascript:void(0);" ng-click="game.play(yund)">play</a></h1>
 	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span></div>
-	<div>
+	<div class="game">
 		<span class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index" title="{{rate||'.'}}">.</span>
 	</div>
 </body>

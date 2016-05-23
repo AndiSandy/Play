@@ -4,7 +4,8 @@
 	float:left;
     display: block;
     float: left;
-
+    transition: .1s transform;
+    transform: translateZ(0);
 }
 .rate-zero{
 	color: #fff;
@@ -30,4 +31,22 @@
 	color: #fff;
 	background-color: #d9534f;
     border-color: #d43f3a;
+}
+
+@keyframes evenflow_shake {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); } }
+.rate:hover{
+    animation-name: evenflow_shake;
+    animation-duration:500ms;
+    transform-origin:50% 50%;
+    animation-iteration-count:infinite;
+    animation-direction:alternate;
+    animation-timing-function:ease; 
+}
+
+.game > span:hover{
+  transform: scale(1.5, 1.5);
+  transition: .3s transform;
 }
