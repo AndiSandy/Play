@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html ng-app="gameApp">
+<head>
+    <meta charset="utf-8">
+    <title>云钻大乐透</title>
+	<link rel="stylesheet" href="css/play.css" />
+	<script type="text/javascript" src="lib/jquery-2.2.4.js"></script>
+	<script type="text/javascript" src="lib/angular.js"></script>
+	<script>
+		var app = angular.module('gameApp', []);
+	</script>
+	<script type="text/javascript" src="game.js"></script>
+</head>
+<body ng-controller="playCtrl">
+	<h1>hello world-{{title}}</h1>
+	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span></div>
+	<div>
+		<span class="rate" ng-repeat="rate in game.rateArr track by $index">{{rate}}</span>
+	</div>
+</body>
+</html>
