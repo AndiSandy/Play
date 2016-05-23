@@ -2,12 +2,19 @@
 <html ng-app="gameApp">
 <head>
     <meta charset="utf-8">
-    <title>云钻大乐透</title>
+    <title>play game now</title>
 	<link rel="stylesheet" href="css/play.css" />
 	<script type="text/javascript" src="lib/jquery-2.2.4.js"></script>
 	<script type="text/javascript" src="lib/angular.js"></script>
 	<script>
 		var app = angular.module('gameApp', []);
+		var cssMap = {
+			'0' : 'zero',
+			'0.5' : 'half',
+			'1' : 'one',
+			'3' : 'three',
+			'5' : 'five'	
+		};
 	</script>
 	<script type="text/javascript" src="game.js"></script>
 </head>
@@ -15,7 +22,7 @@
 	<h1>hello world-{{title}}</h1>
 	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span></div>
 	<div>
-		<span class="rate" ng-repeat="rate in game.rateArr track by $index">{{rate}}</span>
+		<span class="rate rate-{{cssMap[rate]}}" ng-repeat="rate in game.rateArr track by $index">{{rate||'.'}}</span>
 	</div>
 </body>
 </html>

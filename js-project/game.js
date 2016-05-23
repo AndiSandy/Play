@@ -21,6 +21,9 @@ var Game = Class.extend({
 	initNum : 0,
 	progress : '0',
 	init : function(){
+		this.rateArr.length = this.radix;
+	},
+	init1 : function(){
 		var total = 0;
 		var initNum = 0;
 		for( var multiple in this.rate ){
@@ -81,16 +84,16 @@ var Game = Class.extend({
 	},
 	random4rate : function(){
 		var r = this.random();
-		return this.rateArr[r] || this.rateArr[this.count];
+		return {rate:this.rateArr[r] || this.rateArr[this.count],at:r};
 	},
 	play : function( yund ){
-		var rate = this.random4rate();
+		var rateo = this.random4rate(),rate = o.rate;
 		var y = yund * rate;
 		if(rate > 1 ){
 			var _3dstyle = "text-shadow: 0 1px 0 #fff,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:5em;color:red;";
 			console.info("%c恭喜您,云钻x%s倍,获得了%s个云钻!",_3dstyle,rate,y);
 		}
-		return {rate : rate, yund : y };
+		return {rate : rate, yund : y,at:rateo.at };
 	}
 });
 app.controller('playCtrl', function($scope,$timeout) {
@@ -99,5 +102,9 @@ app.controller('playCtrl', function($scope,$timeout) {
 	var e = new Date().getTime();
 	console.info("耗时",(e-s))
 	$scope.game = game;
+	$scope.cssMap = cssMap;
 	$scope.title = "play game now";
+	$timeout(function(){
+		game.init1();
+	},2000);
 });
