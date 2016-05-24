@@ -1,11 +1,28 @@
+.game{
+	margin:0px;
+	padding:0px;
+}
 .rate{
-	width:5px;
-    height:5px;
+	width:10px;
+    height:10px;
 	float:left;
     display: block;
     float: left;
-    transition: .1s transform;
-    transform: translateZ(0);
+    cursor: pointer;
+    content: ".";
+}
+.rate-label-panel{
+	height: 30px;
+    margin-bottom: 10px;
+}
+.rate-label{
+	width:100px;
+    height:30px;
+    text-align: center;
+    float: left;
+    line-height: 30px;
+    display: block;
+    float: left;
 }
 .rate-zero{
 	color: #fff;
@@ -33,20 +50,44 @@
     border-color: #d43f3a;
 }
 
+/*放大特效*/
+@charset "utf-8";
+  
+.evenflow { }
+
+.evenflow li {
+  transition:all 0.25s ease;
+} 
+
+/* HOVER EFFECTS */
+.evenflow_rotate { transition:transform 0.25s ease;	}
+.evenflow_rotate:hover { transform:rotate(45deg); }
+.evenflow_shiftX { transition:transform 1s ease;	}
+.evenflow_shiftX:hover { transform:translateX(20px); }
+.evenflow_shiftY { transition:transform 1s ease;	}
+.evenflow_shiftY:hover { transform:translateY(-20px); }
+.evenflow_scale { transition:transform 0.25s ease;	}
+.evenflow_scale:hover { transform:scale(1.25,1.25); }
+.evenflow_spin {transition:transform 0.25s ease; }
+.evenflow_spin:hover {transform:rotate(360deg); }
+
+.evenflow_scale10 { transition:transform 0.25s ease;	}
+.evenflow_scale10:hover { transform:scale(12.5,12.5); }
+.hover10{
+	transform:scale(12.5,12.5);
+}
 @keyframes evenflow_shake {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); } }
-.rate:hover{
-    animation-name: evenflow_shake;
-    animation-duration:500ms;
-    transform-origin:50% 50%;
-    animation-iteration-count:infinite;
-    animation-direction:alternate;
-    animation-timing-function:ease; 
+	0% { transform: scale(1); }
+	50% { transform: scale(1.1); }
+	100% { transform: scale(1); } 
 }
 
-.game > span:hover{
-  transform: scale(1.5, 1.5);
-  transition: .3s transform;
+.evenflow_shake {transform:scale(1); }
+.evenflow_shake:hover{
+	animation-name: evenflow_shake;
+	animation-duration:500ms;
+	transform-origin:50% 50%;
+	animation-iteration-count:infinite;
+	animation-direction:alternate;
+	animation-timing-function:ease; 
 }

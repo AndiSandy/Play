@@ -15,15 +15,25 @@
 			'3' : 'three',
 			'5' : 'five'	
 		};
+		function hover( rateo ){
+			$("#rate-" + rateo.at).addClass("hover10");
+			setTimeout(function(){
+				$("#rate-" + rateo.at).removeClass("hover10");	
+			},3000);
+		}
 	</script>
 	<script type="text/javascript" src="game.js"></script>
 </head>
 <body ng-controller="playCtrl">
 	<h1>hello world-{{title}}<input type="text" name="yund" ng-model="yund"/>
 	<a href="javascript:void(0);" ng-click="game.play(yund)">play</a></h1>
-	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span></div>
-	<div class="game">
-		<span class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index" title="{{rate||'.'}}">.</span>
+	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span>
+		<ul class="rate-label-panel evenflow">
+			<li ng-repeat="(key,value) in cssMap" class="rate-label rate-{{value}} evenflow_scale">rate-{{key}}</li>
+		</ul>
 	</div>
+	<ul class="game evenflow">
+		<li class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index"></li>
+	</ul>
 </body>
 </html>
