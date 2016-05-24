@@ -22,18 +22,31 @@
 			},3000);
 		}
 	</script>
+	<script type="text/javascript" src="base.js"></script>
 	<script type="text/javascript" src="game.js"></script>
+	<script type="text/javascript" src="player.js"></script>
 </head>
-<body ng-controller="playCtrl">
-	<h1>hello world-{{title}}<input type="text" name="yund" ng-model="yund"/>
-	<a href="javascript:void(0);" ng-click="game.play(yund)">play</a></h1>
-	<div>init-<span>{{game.initNum}}-{{game.progress}}%</span>
-		<ul class="rate-label-panel evenflow">
-			<li ng-repeat="(key,value) in cssMap" class="rate-label rate-{{value}} evenflow_scale">rate-{{key}}</li>
+<body>
+	<div ng-controller="playCtrl">
+		<h1>hello world-{{title}}<input type="text" name="yund" ng-model="yund"/>
+		<a href="javascript:void(0);" ng-click="game.play(yund)">play</a></h1>
+		<div>init-<span>{{game.initNum}}-{{game.progress}}%</span>
+			<ul class="rate-label-panel evenflow">
+				<li ng-repeat="(key,value) in cssMap" class="rate-label rate-{{value}} evenflow_scale">rate-{{key}}</li>
+			</ul>
+		</div>
+		<ul class="game evenflow">
+			<li class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index"></li>
+		</ul>
+		<ul class="msg-queue">
+			<li class="msg">msg-queue</li>
+			<li class="msg rate-{{cssMap[msg.rate]}}" ng-repeat="msg in game.msgQueue.queue track by $index">{{$index}}.{{msg.content}}</li>
 		</ul>
 	</div>
-	<ul class="game evenflow">
-		<li class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index"></li>
-	</ul>
+	<script type="text/javascript">
+		$(function(){
+			$(".game").width(window.innerWidth - ($(".msg-queue").outerWidth() + 100) );
+		});
+	</script>
 </body>
 </html>

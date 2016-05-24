@@ -15,12 +15,14 @@ function assertNotNull(s,msg){
 var Game = Class.extend({
 	//发生倍数概率
 	rate : { '0' : 21.46, '0.5' : 39.73, '1': 23.71, '3':10, '5' : 5.12},
+	rateParam : { '0' : 0, '0.5' : 0.5, '1' : 1, '3' : 3, '5' : 5},
 	rateArr : [],
 	seedArr :[],
 	count : 0,
 	radix : 10000,
 	initNum : 0,
 	progress : '0',
+	msgQueue : new Queue(17),
 	init : function(){
 		var total = 0;
 		for( var multiple in this.rate ){
@@ -63,7 +65,7 @@ var Game = Class.extend({
 				//console.info("%s-初始化进度%s%",initNum,this.progress);
 				//this.$scope.$apply();
 			}
-			this.$scope.$apply();
+			//this.$scope.$apply();
 		};
 		task.apply(scope,[multiple]);
 		/*
@@ -91,16 +93,25 @@ var Game = Class.extend({
 		var r = this.random(this.total);
 		return {rate:this.rateArr[r] || this.rateArr[this.count],at:r};
 	},
-	play : function( yund ){
+	play : function( yund ,callback){
 		var rateo = this.random4rate(),rate = rateo.rate;
 		var y = yund * rate;
+		var o = {rate : rate, yund : y,at:rateo.at };
+		var content = "";
 		if(rate > 1 ){
 			var _3dstyle = "text-shadow: 0 1px 0 #fff,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:5em;color:red;";
-			console.info("%c恭喜您,云钻x%s倍,获得了%s个云钻!",_3dstyle,rate,y);
+			content = "恭喜您,云钻x{rate}倍,获得了{yund}个云钻!".format(o);
+			//console.info("%c%s",_3dstyle,o.content);
+		}else if( rate > 0 ){
+			content = "恭喜您获得{yund}个云钻!".format(o);
+		}else{
+			content = "未中奖,请再接再厉吧!";
 		}
-		var o = {rate : rate, yund : y,at:rateo.at };
+		o.content = content;
+		this.msgQueue.qin(o);
 		hover(o);
-		console.info("您获得x%s倍%s云钻,概率位%s",o.rate,o.yund,o.at);
+		console.info("{content}\tx{rate}倍概率\t概率位{at}".format(o));
+		callback && callback(o);
 		return o;
 	}
 });
