@@ -39,7 +39,7 @@
 			<li class="rate rate-{{cssMap[rate]}}" id="rate-{{$index}}" ng-repeat="rate in game.rateArr track by $index"></li>
 		</ul>
 		<ul class="msg-queue">
-			<li class="msg">msg-queue</li>
+			<li class="msg">msg-queue[{{game.totalaccount}}]</li>
 			<li class="msg rate-{{cssMap[msg.rate]}}" ng-repeat="msg in game.msgQueue.queue track by $index">{{$index}}.{{msg.content}}</li>
 		</ul>
 	</div>

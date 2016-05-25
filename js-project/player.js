@@ -75,12 +75,87 @@
 			this.reset();
 		}
 	};
-	//深度学习
+
+	//学习
 	var deepLearning = {
 		count : 0,
 		yund : {},
 		records : new Queue(50),
 		history: new Queue(50),
+		brain : {
+			rule : [
+				'continueMiss(hit:// && yund://){ yund + 1}[break]'
+			],
+			resolveRule4string : function(rule){
+				var o = {name:'example',condition:'',action:'',next:''};
+				var reg = /([^\()]+)\s*\(([^\)]+)\)\s*({[^}]+})\s*\[([^]+)\]/,m=null;
+				if( m = reg.exec(rule) ){
+					o.name = m[1];
+					o.condtion = m[2];
+					o.action = m[3];
+					o.next = m[4];
+				}else{
+					console.error('ileagel rule:%s',rule);
+					o = null;
+				}
+				return o;
+			},
+			resolveRule4object : function( rule ){
+				return rule;
+			},
+			init : function(){
+				this.ruleMap = {};
+				this.ruleArr = [];
+				for(var i = 0; i < this.rule.length; i ++){
+					var rule = this.rule[i];
+					if( typeof rule == 'string' && ( rule = this.resolveRule4string(rule) ) ){
+						//resolve
+						this.ruleArr[i] = rule;
+						this.ruleMap[rule.name] = rule;
+					}else if( typeof rule == 'object' && !rule.name){
+						rule = this.resolveRule4object(rule);
+						this.ruleArr[i] = rule;
+						this.ruleMap[rule.name] = rule;
+					}else{
+						console.error('unkown rule:%s',rule);
+					}
+				}
+			},
+			execCondtion : function( condtion, context ){
+				// check condtion
+				return true;
+			},
+			execAction : function( action, context ){
+				// do some thing
+			},
+			execRule : function( rule, context ){
+				// get condition
+				var bexec = this.execCondtion(rule.condition,context),next = rule.next ;
+				if( bexec ){
+					// do something
+					this.execAction(rule.action,context);
+					if( next != 'break' && next != 'next'){
+						var nextRule = this.ruleMap[next];
+						next = this.execRule(rule, context );
+					}
+				}
+				return next;
+			},
+			think : function( context ){
+				// rosolve rule
+				for(var i =0; i < this.ruleArr.length; i ++){
+					var rule = this.ruleArr[i];
+					// exec rule
+					var next = this.execRule(rule,context);
+					// do next
+					if( next == 'break'){
+						break;
+					}else if( next == 'next'){
+						continue;
+					}
+				}
+			}
+		},
 		before : function( status ){
 			//记录变化数据
 			this.records.qin(status);
@@ -89,30 +164,25 @@
 				this.history.qin(this.records.copy());
 			}
 		},
-		rule : {
-			'continueMiss' : '(hit:// && yund://){ yund + 1}[break]',
-			'' : '(hit:// && yund://) { yund + 1}[next]',
-			'' : '(hit:// && yund://) { yund + 1}[next]'
-		},
+		prepare : function(){},
 		doing : function(){
 			var hit_records = this.records.join('');
 			var yund_records = this.yund.records.join('');
 			// TODO
 			var context = {};
 			//resolve rule
+			this.brain.think(context);
 		},
-		after : function(){
-		},
+		after : function(){},
 		learn : function(status){
 			this.count ++;
-			//var statusname = ydstatus.getname(status);
-			//this[statusname]();
 			this.before(status);
 			this.doing(status);
 			this.after(status);
 			console.info(this.count,'status',status,"当前即将消费的云钻数",this.yund.now());
 		},
 		init : function(target){
+			this.brain.init();
 			this.target = target;
 			this.yund = target.yund;
 		}
@@ -186,6 +256,7 @@
 					//$.get(that.p(),process,'json');
 					//simulate
 					game.play(that.cost,process);
+					game.totalaccount = that.totalaccount + that.account;
 					game.$scope.$apply();
 				}
 			,this.delay);

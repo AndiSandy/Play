@@ -400,6 +400,9 @@
 		},
 		join : function(join){
 			return this.queue.join(join); 
+		},
+		toString : function(){
+			return this.queue.toString();
 		}
 	});
 
