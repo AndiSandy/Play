@@ -306,12 +306,12 @@
 			var getCount = this.getCount = get - this.cost;
 			//本次投递状态,小于0为0，等于0为1，大于0为2
 			this.status = ydstatus.getstatus(getCount);
-			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account ,"云钻",this.stat.stat());
+			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount,"云钻",this.stat.stat());
 		},
 		stop:function(){
 			var that = this;
 			this.totalaccount += this.account;
-			//this.account = 0;
+			this.account = 0;
 			this.count = 0;
 			clearInterval(this.timer);
 			window.localStorage.totalaccount = this.totalaccount;

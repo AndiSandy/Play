@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="BaiduMapTileCutter"
+  id="myeclipse.1348713450213"
+  context-root="/BaiduMapTileCutter"
+  j2ee-spec="5.0"
+  archive="BaiduMapTileCutter.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+
