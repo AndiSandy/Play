@@ -121,14 +121,40 @@
 					}
 				}
 			},
+			//条件解析
+			condtionResovler : {
+				resolve : function( condition, context ){
+					//check
+					var bcheck = false;
+					if( typeof action == 'function' ){
+						bcheck = condition.apply( context );
+					}else if( typeof rule == 'string' ){
+						// resolve in some rules
+					}
+					return bcheck;
+				}
+			},
+			//action解析
+			actionResovler : {
+				resolve : function( action, context ){
+					// do some thing
+					if( typeof action == 'function' ){
+						action.apply( context );
+					}else if( typeof rule == 'string' ){
+						action.format(context);
+					}
+				}
+			},
 			execCondition : function( condition , context ){
 				// check condition
 				console.info('condition:%s',condition);
-				return true;
+				var bcheck = this.condtionResovler.resolve(condition, context );
+				return bcheck;
 			},
 			execAction : function( action, context ){
 				// do some thing
 				console.info('action:%s',action);
+				this.actionResovler.resolve( action, context );
 			},
 			execRule : function( rule, context ){
 				// get condition
