@@ -84,14 +84,14 @@
 		history: new Queue(50),
 		brain : {
 			rule : [
-				'continueMiss(hit:// && yund://){ yund + 1}[break]'
+				'continueMiss(hit:// && yund://){ yund + 1 }[break]'
 			],
 			resolveRule4string : function(rule){
 				var o = {name:'example',condition:'',action:'',next:''};
 				var reg = /([^\()]+)\s*\(([^\)]+)\)\s*({[^}]+})\s*\[([^]+)\]/,m=null;
 				if( m = reg.exec(rule) ){
 					o.name = m[1];
-					o.condtion = m[2];
+					o.condition = m[2];
 					o.action = m[3];
 					o.next = m[4];
 				}else{
@@ -121,16 +121,18 @@
 					}
 				}
 			},
-			execCondtion : function( condtion, context ){
-				// check condtion
+			execCondition : function( condition , context ){
+				// check condition
+				console.info('condition:%s',condition);
 				return true;
 			},
 			execAction : function( action, context ){
 				// do some thing
+				console.info('action:%s',action);
 			},
 			execRule : function( rule, context ){
 				// get condition
-				var bexec = this.execCondtion(rule.condition,context),next = rule.next ;
+				var bexec = this.execCondition(rule.condition,context),next = rule.next ;
 				if( bexec ){
 					// do something
 					this.execAction(rule.action,context);
