@@ -77,7 +77,7 @@
 	};
 
 	//学习
-	var deepLearning = {
+	var autoLearning = {
 		count : 0,
 		yund : {},
 		records : new Queue(50),
@@ -123,6 +123,44 @@
 			},
 			//条件解析
 			condtionResovler : {
+				exec : function( expro, context ){
+					var bop = false;
+					//do something
+					expro.bop = bop;
+					return expro;
+				},
+				resolve4string : function(condition, context ){
+					var exprs = [];
+					conditon.replace(/(&&|\|\|)*\s*([^&\|\s]+)/g,function(exprall,cond,expr){
+						if( expr ){
+							//expression
+							var expro = {
+								expr : cond,
+								operate : function( expro ){
+									var bop = false;
+									if( this.suffix == '&&' ){
+										bop = this.result && expro.bop;
+									}else if( this.suffix == '||' ){
+										bop = this.result || expro.bop;
+									}
+									this.bop = bop;
+								}
+							};
+							//operation flag eg:&& ||
+							if( cond ) {
+								expro.suffix = cond;
+							}
+							exprs.push( expro );
+						}
+					})
+					var bcheck = false;
+					for( var i = 1; i < exprs.length; i ++ ){
+						var expro1 = this.exec(exprs[i-1]);
+						var expro2 = this.exec(exprs[i]);
+						bcheck = expro2.operate( expro1 );
+					}
+					return bcheck;
+				},
 				resolve : function( condition, context ){
 					//check
 					var bcheck = false;
@@ -130,6 +168,7 @@
 						bcheck = condition.apply( context );
 					}else if( typeof rule == 'string' ){
 						// resolve in some rules
+						bcheck = this.resolve4string( condition, context );
 					}
 					return bcheck;
 				}
@@ -256,10 +295,10 @@
 			var activitId=$("#gameActivitiesConfigureId").val();
 			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
-		deep : deepLearning,
+		alearn : autoLearning,
 		control : function(){
 			//学习调整
-			this.deep.learn(this.status);
+			this.alearn.learn(this.status);
 			//跑十次
 			if( this.count < this.min ){
 				//noop
@@ -291,7 +330,7 @@
 		},
 		init : function(){
 			this.yund.init(this);
-			this.deep.init(this);
+			this.alearn.init(this);
 			if( window.localStorage.stat ){
 				try{
 					this.totalaccount = Math.round($("#myPointDrill").html()) || Math.round(window.localStorage.totalaccount) || 0 ;
@@ -386,7 +425,7 @@
 			for(var i = 0; i < 50; i ++){
 				var r = new Date().getTime() * i % 3 - 1;
 				//console.info(r);
-				this.deep.learn(r);
+				this.alearn.learn(r);
 			}
 		}
 	}
