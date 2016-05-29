@@ -53,6 +53,9 @@
 		json : function(){
 			return this.eval(this);
 		},
+		_eval_ : function(){
+			return this.json();
+		},
 		eval : function(v,scope){
 			try{
 				with(scope || window){
@@ -406,7 +409,20 @@
 		}
 	});
 
-
+	$.fn.jsonp = function(url,data,callback,callname){
+		var post = {
+			type: "POST",
+			url: url,
+			cache : false,
+			async : false,
+			data : data,
+			dataType : "jsonp",
+			jsonp : "callback",
+			jsonpCallback : callname,
+			success: callback
+		};
+		$.ajax(post);
+	}
 	$.extend(_w,{
 		Queue : Queue
 	});

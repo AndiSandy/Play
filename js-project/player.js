@@ -31,18 +31,17 @@
 		records : new Queue(50),
 		up : function(){
 			this.curr ++;
-			this.up.count ++;
-			return this.go();
+			return this.go(this.curr);
 		},
 		down : function(){
 			this.curr --;
-			this.down.count ++;
-			return this.go();
+			return this.go(this.curr);
 		},
-		go : function(){
+		go : function(level){
 			this.count ++;
-			this.curr = Math.min(this.curr,this.level.length-1);
-			this.curr = Math.max(this.curr,0);
+			this.curr = level == null ? this.curr : level;
+			this.curr = Math.min( this.curr,this.level.length-1);
+			this.curr = Math.max( this.curr,0);
 			var num = this.level[this.curr];
 			this.records.qin(this.curr);
 			this.target && (this.target.cost = num);
@@ -59,20 +58,9 @@
 			this.curr = 0;
 			return this.go();
 		},
-		isfooter : function(){
-			return this.curr == 0;
-		},
-		isheader : function(){
-			return this.curr == this.level.length;
-		},
-		reset : function(){
-			this.up.count = this.down.count = 0;
-			this.up.max = this.down.max = 2;
-		},
 		init : function(target){
 			this.curr = this.level.indexOf(target.cost);
 			this.target = target;
-			this.reset();
 		}
 	};
 
@@ -84,7 +72,40 @@
 		history: new Queue(50),
 		brain : {
 			rule : [
-				'continueMiss(hit:// && yund://){ yund + 1 }[break]'
+				'continueMiss(hit_mem:/^[01]{5}/ && yund_mem:/^[01]{5}/){ yund ++ }[break]',
+				'continueMiss2(hit_mem:/^[01]{3}/ && yund_mem:/^[1234]{3}/){ yund -- }[break]',
+				'upAndDown5(hit_mem:/^[2]/ && yund_mem:/^[01234]/){ yund = 1 }[break]',
+				'upAndDown1(hit_mem:/^[012]{1}[2]/ && yund_mem:/^[01]{3}/){ yund = 4 }[break]',
+				'upAndDown2(hit_mem:/^[012]{1,2}[2]/ && yund_mem:/^[4]{1}/){ yund = 0 }[break]',
+				'upAndDown3(hit_mem:/^[012]{2,5}[2]/ && yund_mem:/^[01]{3}/){ yund ++ }[break]',
+				'upAndDown4(hit_mem:/^[012]{3}[2]/ && yund_mem:/^[234]{5}/){ yund = 1 }[break]'
+			],
+			filters : [
+				{
+					name : 'calcP',
+					filter : function( context ){
+						var history = context.hit_history,max_hit=null,min_hit=null;
+						for(var i = 0; i < history.length; i ++ ){
+							var record = history[i].join('');
+							var matches = record.match(/2([01]+)2/);
+							if( matches ){
+								for(var j = 1; j < matches.length; j ++ ){
+									if( max_hit == null ){
+										max_hit = matches[j].length;
+										min_hit = matches[j].length;
+									}else{
+										max_hit = Math.max(max_hit,matches[j].length);
+										min_hit = Math.min(min_hit,matches[j].length);
+									}
+								}
+							}
+						}
+						if( max_hit != null ){
+							context.max_hit = max_hit;
+							context.min_hit = min_hit;
+						}
+					}
+				}
 			],
 			resolveRule4string : function(rule){
 				var o = {name:'example',condition:'',action:'',next:''};
@@ -123,19 +144,41 @@
 			},
 			//条件解析
 			condtionResovler : {
+				operateExpr : {
+					//reg operate
+					":" : function(expr1,expr2reg,context){
+						var expr1Value = context[expr1];
+						var matches = expr1Value.match( expr2reg._eval_() );
+						return matches != null;
+					}
+				},
 				exec : function( expro, context ){
 					var bop = false;
 					//do something
+					var matches = expro.expr.match(/([^:=><]+)([:=><]+)([^:=><]+)/);
+					if( matches ){
+						expro.expr1 = matches[1];
+						expro.operateExpr = matches[2];
+						expro.expr2 = matches[3];
+						expro.operateFunc = this.operateExpr[expro.operateExpr];
+						if( expro.operateFunc ){
+							expro.result = bop = expro.operateFunc( expro.expr1, expro.expr2, context );
+						}else{
+							console.error("unkown conditon operateExpr:%s",expro.operateExpr);
+						}
+					}else{
+						console.error("unkown conditon:%o",expro);
+					}
 					expro.bop = bop;
 					return expro;
 				},
 				resolve4string : function(condition, context ){
 					var exprs = [];
-					conditon.replace(/(&&|\|\|)*\s*([^&\|\s]+)/g,function(exprall,cond,expr){
+					condition.replace(/(&&|\|\|)*\s*([^&\|\s]+)/g,function(exprall,cond,expr){
 						if( expr ){
 							//expression
 							var expro = {
-								expr : cond,
+								expr : expr,
 								operate : function( expro ){
 									var bop = false;
 									if( this.suffix == '&&' ){
@@ -144,6 +187,7 @@
 										bop = this.result || expro.bop;
 									}
 									this.bop = bop;
+									return bop;
 								}
 							};
 							//operation flag eg:&& ||
@@ -154,21 +198,29 @@
 						}
 					})
 					var bcheck = false;
-					for( var i = 1; i < exprs.length; i ++ ){
-						var expro1 = this.exec(exprs[i-1]);
-						var expro2 = this.exec(exprs[i]);
-						bcheck = expro2.operate( expro1 );
+					if( exprs.length > 1 ){
+						for( var i = 1; i < exprs.length; i ++ ){
+							var expro1 = this.exec( exprs[i-1], context );
+							var expro2 = this.exec( exprs[i], context );
+							bcheck = expro2.operate( expro1 );
+						}
+					}else{
+						var expro = this.exec( exprs[0] );
+						bcheck = expro.result;
 					}
+					
 					return bcheck;
 				},
 				resolve : function( condition, context ){
 					//check
 					var bcheck = false;
-					if( typeof action == 'function' ){
+					if( typeof condition == 'function' ){
 						bcheck = condition.apply( context );
-					}else if( typeof rule == 'string' ){
+					}else if( typeof condition == 'string' ){
 						// resolve in some rules
 						bcheck = this.resolve4string( condition, context );
+					}else if( typeof condition == 'boolean'){
+						bcheck = condition;
 					}
 					return bcheck;
 				}
@@ -179,14 +231,14 @@
 					// do some thing
 					if( typeof action == 'function' ){
 						action.apply( context );
-					}else if( typeof rule == 'string' ){
+					}else if( typeof action == 'string' ){
 						action.format(context);
 					}
 				}
 			},
 			execCondition : function( condition , context ){
 				// check condition
-				console.info('condition:%s',condition);
+				//console.info('condition:%s',condition);
 				var bcheck = this.condtionResovler.resolve(condition, context );
 				return bcheck;
 			},
@@ -205,22 +257,34 @@
 						var nextRule = this.ruleMap[next];
 						next = this.execRule(rule, context );
 					}
+				}else {
+					next = null;
 				}
 				return next;
 			},
 			think : function( context ){
-				// rosolve rule
-				for(var i =0; i < this.ruleArr.length; i ++){
-					var rule = this.ruleArr[i];
-					// exec rule
-					var next = this.execRule(rule,context);
-					// do next
-					if( next == 'break'){
-						break;
-					}else if( next == 'next'){
-						continue;
-					}
+				//fitlers
+				for( var i = 0; i < this.filters.length; i ++ ){
+					var filter = this.filters[i];
+					filter.filter( context );
 				}
+				// rosolve rule
+				if( context.skip == 0 ){
+					for(var i =0; i < this.ruleArr.length; i ++){
+						var rule = this.ruleArr[i];
+						// exec rule
+						var next = this.execRule(rule,context);
+						// do next
+						if( next == 'break'){
+							break;
+						}else if( next == 'next'){
+							continue;
+						}
+					}
+				}else{
+					context.skip --;
+				}
+				
 			}
 		},
 		before : function( status ){
@@ -231,14 +295,29 @@
 				this.history.qin(this.records.copy());
 			}
 		},
-		prepare : function(){},
+		context : {
+			skip : 0,
+			dumpout : function(){
+				that.yund.go(this.yund);
+			}
+		},
 		doing : function(){
-			var hit_records = this.records.join('');
-			var yund_records = this.yund.records.join('');
+			var that = this;
+			var hit_mem = this.records.join('');
+			var yund_mem = this.yund.records.join('');
 			// TODO
-			var context = {};
+			var context = {
+				hit_mem : hit_mem,
+				yund_mem : yund_mem,
+				yund : that.yund.curr,
+				hit_history : this.history.queue,
+				dumpout : function(){
+					that.yund.go(this.yund);
+				}
+			};
 			//resolve rule
-			this.brain.think(context);
+			this.brain.think($.extend(this.context,context));
+			this.context.dumpout();
 		},
 		after : function(){},
 		learn : function(status){
@@ -252,6 +331,19 @@
 			this.brain.init();
 			this.target = target;
 			this.yund = target.yund;
+			//init
+			if( window.applicationCache.records && window.applicationCache.history && window.applicationCache.yun_records){
+				this.records.queue = window.applicationCache.records;
+				this.history.queue = window.applicationCache.history;
+				this.yund.records.queue = window.applicationCache.yun_records;
+			}
+		},
+		destory : function(){
+			if( this.yund && this.yund.records){
+				window.applicationCache.records = this.records.queue;
+				window.applicationCache.history = this.history.queue;
+				window.applicationCache.yun_records = this.yund.records.queue;
+			}
 		}
 	};
 
@@ -343,6 +435,15 @@
 				}
 			}
 		},
+		queryTotal : function(callback){
+			var that = this;
+			var url = "http://vip.suning.com/ajax/list/member.do?callback=callbackFun";
+			$.jsonp(url,{'targetURL' : targetURL},function(data){
+				if( data.userLogin == 'Y' ){
+					callback.apply(that,[data.point.totalPoint]);
+				}
+			},'callbackFun');
+		},
 		calc : function(data){
 			var get = 0;
 			var reg1 = /恭喜您获得(\d+)个云钻!/,m;
@@ -373,7 +474,7 @@
 			var getCount = this.getCount = get - this.cost;
 			//本次投递状态,小于0为0，等于0为1，大于0为2
 			this.status = ydstatus.getstatus(getCount);
-			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount,"云钻",this.stat.stat());
+			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account,"云钻",this.stat.stat());
 		},
 		stop:function(){
 			var that = this;
@@ -391,9 +492,10 @@
 					that.run();
 				},delay );
 			}
-			
 		},
 		destory:function(){
+			//this.stop();
+			this.alearn.destory(this);
 			clearTimeout(this.timer1);
 			clearInterval(this.timer);
 		},
