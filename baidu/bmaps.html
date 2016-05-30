@@ -1,23 +1,33 @@
 <!DOCTYPE html>
 <html>
-    
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>百度离线地图演示</title>
+        <!---->
+        <script type="text/javascript" src="http://api.map.baidu.com/api?v=1.3"></script>
+        
+        <!--
         <script type="text/javascript" src="js/apiv1.3.min.js"></script>
         <script type="text/javascript" src="js/getmodules.js"></script>
+        -->
+
         <script type="text/javascript" src="js/findtiles.js"></script>
-        
-        <!--script type="text/javascript" src="http://api.map.baidu.com/api?v=1.3"></script-->
+
+
         <link rel="stylesheet" type="text/css" href="bmap.css" />
     </head>
     
     <body>
         <div style="left:0;top:0;width:100%;height:100%;position:absolute;" id="container"></div>
-    </body>
-    <input type="button" value="findtiles" onclick="findtiles();" style="position:absolute;left: 100px;">
-</html>
-<script type="text/javascript">
+
+        <div style="  position: absolute;">
+            输入省、直辖市或县名称：<input type="text" id="districtName" style="width:80px" value="重庆市" />
+            <input type="button" onclick="getBoundary()" value="获取轮廓线" />
+            <input type="button" value="findtiles" onclick="findtiles();" />
+        </div>
+
+<script>
+
     var tileLayer = new BMap.TileLayer({
         isTransparentPng: true
     });
@@ -28,10 +38,10 @@
         return 'maptile/' + zoom + '/' + x + '/' + y + '.png';
     }*/
     
-    var map = new BMap.Map('container');
+    var map = new BMap.Map('container'),startPoint = new BMap.Point(118.807621, 32.043924);
     map.addTileLayer(tileLayer);
     map.addControl(new BMap.NavigationControl());
-    map.centerAndZoom(new BMap.Point(100.675, 39.007978), 5);
+    map.centerAndZoom(startPoint, 12);
     map.enableScrollWheelZoom();  //启用滚轮放大缩小
     map.enableKeyboard();       //启用键盘操作，默认禁用。键盘的上、下、左、右键可连续移动地图。
     map.enableContinuousZoom();//启用连续缩放效果
@@ -44,12 +54,21 @@
         content: "http://maptiledownloader.googlecode.com 百度离线地图演示"
     });
     map.addControl(copyCtrl);
-</script>
-<script>
-    function findtiles(){
-        var findAllTiles = downloadBaiduTiles();
-        findAllTiles(map, addUrls);
+
+
+    map.clearOverlays();
+    var count = nanjing_boundary.length; //行政区域的点有多少个
+    for(var i = 0; i < count; i++){
+        var ply = new BMap.Polygon(nanjing_boundary[i], {strokeWeight: 2, strokeColor: "#ff0000"}); //建立多边形覆盖物
+        //map.addOverlay(ply);  //添加覆盖物
+        //map.setViewport(ply.getPath());    //调整视野         
     }
+
+
+    function findtiles(){
+        mapUtils.findAllTiles(map, addUrls);
+    }
+
     function addUrls(xyz, url){
         /*
         var div = document.getElementById("list");
@@ -61,4 +80,77 @@
         div.appendChild(br);*/
         console.info(xyz,url);
     }
+
+    function getBoundary(){       
+        var bdary = new BMap.Boundary();
+        var name = document.getElementById("districtName").value;
+        bdary.get(name, function(rs){       //获取行政区域
+            map.clearOverlays();        //清除地图覆盖物       
+            var count = rs.boundaries.length; //行政区域的点有多少个
+            for(var i = 0; i < count; i++){
+                var ply = new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, strokeColor: "#ff0000"}); //建立多边形覆盖物
+                map.addOverlay(ply);  //添加覆盖物
+                map.setViewport(ply.getPath());    //调整视野         
+            }                
+        });   
+    }
+
+    var myIcon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {  
+        offset: new BMap.Size(10, 25), // 指定定位位置  
+        imageOffset: new BMap.Size(0, 0 - 10 * 25) // 设置图片偏移  
+    });
+
+    var path = [{"lng":118.774276,"lat":32.007923},{"lng":118.805896,"lat":32.003514},{"lng":118.830043,"lat":32.003514},{"lng":118.873736,"lat":32.004004},{"lng":118.893858,"lat":32.003024},{"lng":118.923754,"lat":32.004494},{"lng":118.951925,"lat":32.004984},{"lng":118.980671,"lat":32.005474},{"lng":118.995043,"lat":32.022619},{"lng":119.008267,"lat":32.0427},{"lng":119.026664,"lat":32.054452},{"lng":119.041612,"lat":32.028007},{"lng":119.039312,"lat":31.988325},{"lng":119.007692,"lat":31.980485}];
+    var pathPoints = [];
+
+    for( var i = 0; i < path.length; i ++ ){
+        var p = path[i];
+        var point = new BMap.Point(p.lng,p.lat);
+        pathPoints.push(point);
+    }
+
+    var points = [];
+
+    //点击事件
+    map.addEventListener("click", function(e){  
+        console.info(e.point.lng + ", " + e.point.lat);
+        var marker = new BMap.Marker(e.point,{icon:myIcon}); 
+        map.addOverlay(marker);
+        points.push(e.point);
+    }); 
+
+    function addLine(points){
+        var polyline = new BMap.Polyline(points, {strokeColor:"blue", strokeWeight:6, strokeOpacity:0.5});
+            map.addOverlay(polyline);
+        map.addOverlay(polyline);
+    }
+    addLine(pathPoints);
+
+    function each(arr,callback,delay){
+        var i = 0;
+        function e(arr,i){
+            setTimeout(function(){
+                if( i < arr.length){
+                    callback(i,arr[i]);
+                    i++;
+                    e(arr,i);
+                }
+            },delay);
+        }
+        e(arr,i);
+    }
+    var marker1 = null;
+    each(pathPoints,function(i,point){
+        if( i == 0 ){
+            marker1 = new BMap.Marker(point,{icon:myIcon}); 
+            map.addOverlay(marker1);
+        }else{
+            marker1.setPosition(point);
+        }
+    },1000);
 </script>
+
+
+    </body>
+    
+</html>
