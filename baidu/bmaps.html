@@ -148,6 +148,12 @@
             marker1.setPosition(point);
         }
     },1000);
+
+    var circle = new BMap.Circle(startPoint,1000);
+    circle.setFillColor("#A6CBA1"); //填充颜色
+    circle.setStrokeColor("#A6CBA1"); //边线颜色
+    map.addOverlay(circle); 
+    
 </script>
 
 
