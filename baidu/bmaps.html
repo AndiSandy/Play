@@ -12,8 +12,9 @@
         </script>
         <script type="text/javascript" src="js/apiv1.3.min.js"></script>
         <script type="text/javascript" src="js/getmodules.js"></script>
-        
-
+        <script type="text/javascript" src="js/TextIconOverlay_min.js"></script>
+        <script type="text/javascript" src="js/MarkerClusterer_min.js"></script>
+    
         <script type="text/javascript" src="js/findtiles.js"></script>
 
 
@@ -157,6 +158,19 @@
     circle.setStrokeColor("#A6CBA1"); //边线颜色
     map.addOverlay(circle); 
     
+
+    //点位聚合
+    var MAX = 10;
+    var markers = [];
+    var pt = null;
+    var i = 0;
+    for (; i < pathPoints.length; i++) {
+       pt = pathPoints[i];
+       markers.push(new BMap.Marker(pt));
+    }
+    //最简单的用法，生成一个marker数组，然后调用markerClusterer类即可。
+    var markerClusterer = new BMapLib.MarkerClusterer(map, {markers:markers});
+
 </script>
 
 
