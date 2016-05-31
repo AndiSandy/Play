@@ -332,17 +332,21 @@
 			this.target = target;
 			this.yund = target.yund;
 			//init
-			if( window.applicationCache.records && window.applicationCache.history && window.applicationCache.yun_records){
-				this.records.queue = window.applicationCache.records;
-				this.history.queue = window.applicationCache.history;
-				this.yund.records.queue = window.applicationCache.yun_records;
+			var cacheObj = _.cache('cacheData')；
+			if( cacheObj ){
+				this.records.queue = cacheObj.records;
+				this.history.queue = cacheObj.history;
+				this.yund.records.queue = cacheObj.yun_records;
 			}
 		},
 		destory : function(){
 			if( this.yund && this.yund.records){
-				window.applicationCache.records = this.records.queue;
-				window.applicationCache.history = this.history.queue;
-				window.applicationCache.yun_records = this.yund.records.queue;
+				var cacheObj = {
+					records : this.records.queue,
+					history : this.history.queue,
+					yun_records : this.yund.records.queue
+				};
+				_.cache('cacheData',cacheObj);
 			}
 		}
 	};

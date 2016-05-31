@@ -351,12 +351,25 @@
 		}
 		return o;
 	}
-
+	function cache(name,value){
+		//init
+		var cacheObj = {};
+		if( window.localStorage.cacheObj ){
+			cacheObj = JSON.parse( window.localStorage.cacheObj );
+		}
+		if( value != null ){
+			cacheObj[name] = value;
+			window.localStorage.cacheObj = JSON.stringify(cacheObj);
+		}else{
+			return cacheObj[name];
+		}
+	}
 	window._ = {
 			objarr2map : objarr2map,
 			arr2map : arr2map,
 			map2objarr : map2objarr,
-			map2arr : map2arr
+			map2arr : map2arr,
+			cache : cache
 	};
 
 	//类定义
