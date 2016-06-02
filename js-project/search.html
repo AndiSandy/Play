@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html ng-app="gameApp">
+<head>
+    <meta charset="utf-8">
+    <title>play game now</title>
+	<link rel="stylesheet" href="css/play.css" />
+	<script type="text/javascript" src="lib/jquery-2.2.4.js"></script>
+	<script type="text/javascript" src="lib/angular.js"></script>
+	<script>
+		var app = angular.module('gameApp', []);
+	</script>
+	<script type="text/javascript" src="base.js"></script>
+</head>
+<body>
+	<div ng-controller="searchCtrl">
+		<h1>hello world-{{title}}-{{so.error}}<br/>
+			input:<input type="text" name="inputObj" ng-model="so.inputObj"/>
+			keyword:<input type="text" name="keyword" ng-model="so.keyword"/>
+			filter:<input type="text" name="keyword" ng-model="so.filterValue"/>
+			<a href="javascript:void(0);" ng-click="so.search()">search</a></h1>
+		</h1>
+		<ul class="msg-queue">
+			<li class="msg rate-one" ng-click='so.search(so.parentObj);'>parent:<span>{{so.parentObj}}</span></li>
+			<li class="msg rate-half">curr:{{so.inputObj}}</li>
+			<li class="msg" ng-repeat="(key,value) in so.outputObj"><span ng-click='so.search(so.inputObj + "." + key);'>{{key}}</span>-{{so.show(value)}}</li>
+		</ul>
+	</div>
+	<script type="text/javascript">
+		app.controller('searchCtrl', function($scope,$timeout) {
+			var so = {
+				inputObj : 'window',
+				parentObj : 'window',
+				keyword : '',
+				outputObj : {},
+				error : '',
+				filterValue : '',
+				eval : function(code){
+					return eval('('+code+')');
+				},
+				show : function(value){
+					//console.info(value);
+					try{
+						var s = value;
+						if( typeof s == 'function'){
+							var s = (s).toString(),m = null;
+							if( m = /(function[^\(]*\([^\(]*\))/.exec(s) ){
+								s = m[1];
+							}
+						}else if( s != null && typeof s == 'object' ){
+							s =  '[ object ]'
+						}else if( s == null ){
+							s = '[ null ]'
+						}
+						return s;
+					}catch(e){
+						this.error = e.message;
+						return this.error;
+					}
+				},
+				filter : ['length'],
+				permission : [],
+				search : function(pinputObj){
+					try{
+						this.inputObj = pinputObj || this.inputObj;
+						var p = this.inputObj.split('.');
+						if( p.length > 1){ p.pop() }
+						this.parentObj = p.join('.');
+						var inObj = this.eval(this.inputObj);
+						if( inObj != null ){
+							var outObj = {};
+							var keyword = this.keyword;
+							if( !/\/[^\/]+\//.exec(keyword) ){
+								keyword = '/'+ ( keyword || '.*' ) +'/';
+							}
+							keyword = this.eval(keyword);
+
+							var filterv = this.filterValue;
+							if( !/\/[^\/]+\//.exec(filterv) ){
+								filterv = '/'+ ( filterv || '.*' ) +'/';
+							}
+							filterv = this.eval(filterv);
+
+							for(var key in inObj){
+								//filter
+								if( this.filter.indexOf( key ) >= 0 ){
+									continue;
+								}
+								//permission
+								if( this.permission.length > 0 && this.permission.indexOf( key ) == -1 ){
+									continue;
+								}
+								var value = ''
+								try{
+									value = inObj[key];
+								}catch(e){
+									value = e.message;
+								}
+								if( value != inObj && keyword.exec(key) && !filterv.exec( value )){
+									//console.table(key,value);
+									outObj[key] = value;
+								}
+							}
+							this.outputObj = outObj;
+						}else{
+							this.outputObj = inObj;
+						}
+					}catch(e){
+						this.error = e.message;
+					}
+					//this.outputObj = window;
+				}
+			};
+			$scope.so = so;
+			so.search();
+			function each(arr,callback,delay){
+		        var i = 0;
+		        function e(arr,i){
+		            $timeout(function(){
+		                if( i < arr.length){
+		                    callback(i,arr[i]);
+		                    i++;
+		                    e(arr,i);
+		                }
+		            },delay);
+		        }
+		        e(arr,i);
+		    }
+		    var keys = [];
+		    for( var key in window ){
+		    	keys.push(key);
+		    }
+		    /*
+			each(keys,function(i,key){
+				console.info(key);
+		        so.permission.push(key);
+		        so.search();
+		    },5000);
+			*/
+		});
+	</script>
+</body>
+</html>

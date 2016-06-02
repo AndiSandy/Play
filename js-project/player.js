@@ -332,7 +332,7 @@
 			this.target = target;
 			this.yund = target.yund;
 			//init
-			var cacheObj = _.cache('cacheData')；
+			var cacheObj = _.cache('cacheData');
 			if( cacheObj ){
 				this.records.queue = cacheObj.records;
 				this.history.queue = cacheObj.history;
@@ -441,11 +441,9 @@
 		},
 		queryTotal : function(callback){
 			var that = this;
-			var url = "http://vip.suning.com/ajax/list/member.do?callback=callbackFun";
+			var url = "http://vip.suning.com/ajax/user/getPoint.do?callback=callbackFun";
 			$.jsonp(url,{'targetURL' : targetURL},function(data){
-				if( data.userLogin == 'Y' ){
-					callback.apply(that,[data.point.totalPoint]);
-				}
+				callback.apply(that,[data.totalPoint]);
 			},'callbackFun');
 		},
 		calc : function(data){

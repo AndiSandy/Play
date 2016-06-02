@@ -1,0 +1,40 @@
+{
+    //"update_url": "http://clients2.google.com/service/update2/crx",
+    "description": "suning player",
+    "name": "suning-player",
+    "version": "1.1.1.1",
+    "background": {
+        "page": "bg.html"
+    },
+    "minimum_chrome_version": "18",
+    "permissions": ["http://*/*", "https://*/*", "notifications",
+    	"tabs",    
+		"bookmarks", 
+		"contextMenus",
+		"cookies",
+		"unlimitedStorage"
+    ],
+    "icons": {
+        "16": "images/icon-16.png",
+        "48": "images/icon-32.png",
+        "128": "images/icon-128.png"
+    },
+    
+    "page_action": {
+	    "default_icon": {                    // 可选
+	      "19": "images/icon-19.png",           // 可选
+	      "38": "images/icon-38.png"            // 可选
+	    },
+	    "default_title": "player",      // 可选，在工具提示中显示
+	    "default_popup": "popup.html"        // 可选
+	},
+    "content_scripts": [{
+        "js": ["js/content_sample.js","js/test.js"],
+        "matches": ["http://*/*","https://*/*" ],
+        "run_at": "document_end"
+    }],
+    "web_accessible_resources": ["images/*.png","images/*.gif","js/*.js"],
+    "options_page": "options.html",
+    "manifest_version": 2,
+    "content_security_policy": "script-src 'self'; object-src 'self'"
+}
