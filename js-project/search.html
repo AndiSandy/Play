@@ -16,12 +16,14 @@
 		<h1>hello world-{{title}}-{{so.error}}<br/>
 			input:<input type="text" name="inputObj" ng-model="so.inputObj"/>
 			keyword:<input type="text" name="keyword" ng-model="so.keyword"/>
-			filter:<input type="text" name="keyword" ng-model="so.filterValue"/>
+			filterk:<input type="text" name="keyword" ng-model="so.filterValue"/>
+			filterv:<input type="text" name="keyword" ng-model="so.filterValue"/>
 			<a href="javascript:void(0);" ng-click="so.search()">search</a></h1>
 		</h1>
 		<ul class="msg-queue">
 			<li class="msg rate-one" ng-click='so.search(so.parentObj);'>parent:<span>{{so.parentObj}}</span></li>
 			<li class="msg rate-half">curr:{{so.inputObj}}</li>
+			<li class="msg rate-half">count:{{so.count}} props</li>
 			<li class="msg" ng-repeat="(key,value) in so.outputObj"><span ng-click='so.search(so.inputObj + "." + key);'>{{key}}</span>-{{so.show(value)}}</li>
 		</ul>
 	</div>
@@ -34,6 +36,8 @@
 				outputObj : {},
 				error : '',
 				filterValue : '',
+				filterKey : '',
+				count : 0,
 				eval : function(code){
 					return eval('('+code+')');
 				},
@@ -70,16 +74,22 @@
 							var outObj = {};
 							var keyword = this.keyword;
 							if( !/\/[^\/]+\//.exec(keyword) ){
-								keyword = '/'+ ( keyword || '.*' ) +'/';
+								keyword = '/'+ ( keyword || '.*' ) +'/i';
 							}
 							keyword = this.eval(keyword);
 
 							var filterv = this.filterValue;
 							if( !/\/[^\/]+\//.exec(filterv) ){
-								filterv = '/'+ ( filterv || '.*' ) +'/';
+								filterv = '/'+ ( filterv || 'no empty' ) +'/i';
 							}
 							filterv = this.eval(filterv);
 
+							var filterk = this.filterKey;
+							if( !/\/[^\/]+\//.exec(filterk) ){
+								filterk = '/'+ ( filterk || 'no empty' ) +'/i';
+							}
+							filterk = this.eval(filterk);
+							var count = 0;
 							for(var key in inObj){
 								//filter
 								if( this.filter.indexOf( key ) >= 0 ){
@@ -95,11 +105,16 @@
 								}catch(e){
 									value = e.message;
 								}
-								if( value != inObj && keyword.exec(key) && !filterv.exec( value )){
+								if( filterv.exec( value ) || filterk.exec( key )){
+									continue;
+								}
+								if( value != inObj && keyword.exec(key) ){
 									//console.table(key,value);
 									outObj[key] = value;
 								}
+								count ++;
 							}
+							this.count = count;
 							this.outputObj = outObj;
 						}else{
 							this.outputObj = inObj;

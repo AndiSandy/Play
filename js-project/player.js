@@ -72,13 +72,8 @@
 		history: new Queue(50),
 		brain : {
 			rule : [
-				'continueMiss(hit_mem:/^[01]{5}/ && yund_mem:/^[01]{5}/){ yund ++ }[break]', 
-				'continueMiss2(hit_mem:/^[01]{3}/ && yund_mem:/^[1234]{3}/){ yund -- }[break]',
-				'upAndDown5(hit_mem:/^[2]/ && yund_mem:/^[01234]/){ yund = 1 }[break]',
-				'upAndDown1(hit_mem:/^[012]{1}[2]/ && yund_mem:/^[01]{3}/){ yund = 4 }[break]',
-				'upAndDown2(hit_mem:/^[012]{1,2}[2]/ && yund_mem:/^[4]{1}/){ yund = 0 }[break]',
-				'upAndDown3(hit_mem:/^[012]{2,5}[2]/ && yund_mem:/^[01]{3}/){ yund ++ }[break]',
-				'upAndDown4(hit_mem:/^[012]{3}[2]/ && yund_mem:/^[234]{5}/){ yund = 1 }[break]'
+				'miss(hit_mem:/^[0]+/){ yund -- }[break]', 
+				'miss(hit_mem:/^[1]+/){ yund ++ }[break]', 
 			],
 			filters : [
 				{
