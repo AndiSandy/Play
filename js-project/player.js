@@ -72,7 +72,8 @@
 		history: new Queue(50),
 		brain : {
 			rule : [
-				'miss(hit_mem:/^[0]+/){ yund -- }[break]', 
+				'miss(hit_mem:/^[0]+/){ yund -- }[next]', 
+				'miss(hit_mem:/^[0]+/){ yund -- }[next]', 
 				'miss(hit_mem:/^[1]+/){ yund ++ }[break]', 
 			],
 			filters : [
