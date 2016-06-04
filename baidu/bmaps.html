@@ -7,18 +7,13 @@
         <script type="text/javascript" src="http://api.map.baidu.com/api?v=1.3"></script>
         -->
         <!-- -->
-        <script>
-        	var bmap_root = "";
-        </script>
+
         <script type="text/javascript" src="js/apiv1.3.min.js"></script>
-        <script type="text/javascript" src="js/getmodules.js"></script>
         <script type="text/javascript" src="js/TextIconOverlay_min.js"></script>
         <script type="text/javascript" src="js/MarkerClusterer_min.js"></script>
-    
-        <script type="text/javascript" src="js/findtiles.js"></script>
-
-
         <link rel="stylesheet" type="text/css" href="bmap.css" />
+
+        <script type="text/javascript" src="js/findtiles.js"></script>
     </head>
     
     <body>
@@ -31,20 +26,24 @@
         </div>
 
 <script>
+    var map = new BMap.Map('container'),startPoint = new BMap.Point(118.807621, 32.043924);
+
 
     var tileLayer = new BMap.TileLayer({
         isTransparentPng: true
     });
-    /**/
+    map.addTileLayer(tileLayer);
+    /*
     tileLayer.getTilesUrl = function (tileCoord, zoom) {
         var x = tileCoord.x;
         var y = tileCoord.y;
         return 'maptile/baidu/' + zoom + '/' + x + '/' + y + '.png';
-    }
+    }*/
     
-    var map = new BMap.Map('container'),startPoint = new BMap.Point(118.807621, 32.043924);
-    map.addTileLayer(tileLayer);
-    map.addControl(new BMap.NavigationControl());
+
+    
+    
+    //map.addControl(new BMap.NavigationControl());
     map.centerAndZoom(startPoint, 12);
     map.enableScrollWheelZoom();  //启用滚轮放大缩小
     map.enableKeyboard();       //启用键盘操作，默认禁用。键盘的上、下、左、右键可连续移动地图。
@@ -125,7 +124,6 @@
 
     function addLine(points){
         var polyline = new BMap.Polyline(points, {strokeColor:"blue", strokeWeight:6, strokeOpacity:0.5});
-            map.addOverlay(polyline);
         map.addOverlay(polyline);
     }
     addLine(pathPoints);
