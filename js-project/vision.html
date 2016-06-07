@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html ng-app="gameApp">
+<head>
+    <meta charset="utf-8">
+    <title>vision test</title>
+	<link rel="stylesheet" href="css/play.css" />
+	<script type="text/javascript" src="lib/jquery-2.2.4.js"></script>
+	<script type="text/javascript" src="lib/angular.js"></script>
+	<script>
+		var app = angular.module('gameApp', []);
+	</script>
+	<script type="text/javascript" src="base.js"></script>
+
+	<script id="recursion" type="text/ng-template">
+		<div ng-if="levels[index]>0" style="border:{{index}}px {{color}} solid;padding:10px;" ng-include="'recursion'"  ng-init="index=index-1">{{index}}</div>
+	</script>
+</head>
+<body ng-controller="searchCtrl">
+	{{levels[max_div]}}
+	<div ng-include="'recursion'" ng-init="index=max_div" style="border:{{levels[index]}}px {{color}} solid;padding:10px;"></div>
+
+	<script type="text/javascript">
+		app.controller('searchCtrl', function($scope,$timeout) {
+			var max_div = 20;
+			var levels = [];
+			for(var i = 0; i <= max_div; i ++ ){
+				levels.push(i-1);
+			}
+			$scope.max_div = max_div;
+			$scope.levels = levels;
+			$scope.color = 'green';
+		});
+	</script>
+</body>
+</html>

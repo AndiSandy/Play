@@ -13,46 +13,145 @@
 	if(!$) return;
 		
 	
-	$.extend(String.prototype,{
-		format_dot_o : function(a,value){
-			var expression = value.match(/([^\.]+)/g);//[0-9a-zA-Z_]
-			var v = a[expression[0]];
-			for(var i=1; i < expression.length; i ++){
-				v = v && v[expression[i]];
+	$.extend(String,{
+		fill : '...',
+		show : function(s,length){
+			var s = this.toString(s) || '';
+			if(length > 0 && s.length > length){
+				s = s.substring(0,length) + this.fill;
+			}else if(s == null){
+				s = "";
 			}
-			return $.string.show(v);
+			return (''+s).trim();
 		},
+		toString : function(s){
+			return s == null ? '' : ''+s;
+		}
+	});
+	/**
+	 * 微型模板引擎
+	 * example :
+	 * hello qq,lili,hh
+	 * "hello {0},{1},{2}".format('qq','lili','hh') =="hello {0},{1},{2}".format(['qq','lili','hh']);
+	 * "hello {w},{s},{name}".format({w:'qq',s:'lili',name:'hh'});
+	 * "hello {0},{s},{name}".format({w:'qq',s:'lili',name:'hh'});
+	 */
+	$.extend(String.prototype,{
+		wrap : function(tag){
+			return ['<'+tag+'>',this,'</'+tag+'>'].join('');
+		},
+		is : function(s){
+			return this == s;
+		},
+		eq : function(s){
+			return this == s;
+		},
+		//过滤字符
+		filter : function(chars){
+			var s = this;
+			if(chars){
+				for(var key in chars){
+					s = s.replace(chars[key], key);
+				}
+			}
+			return s;
+		},
+		ifNull : function(a,ifNull){
+			return a == null ? ifNull : a;
+		},
+		isEmpty : function(){
+			return this.trim() == "";
+		},
+		//string转化为json
+		json : function(){
+			return this.eval(this);
+		},
+		_eval_ : function(){
+			return this.json();
+		},
+		eval : function(v,scope){
+			try{
+				with(scope || window){
+					return eval("("+v+")");
+				}
+			}catch(e){
+				debug && console.warn && console.warn(e.message);
+				return null;
+			}
+		},
+		//格式化带点的字符串对象 shop.shopId
+		format_dot_o : function(a,value){
+			var func_reg = /([^\(]+)\(([^\)]+)\)/ig;
+			if(func_reg.test(value)){//function
+				var args = RegExp.$2;
+				var func = RegExp.$1;
+				func = this.format_dot_o(a,func) || function(){return func;};
+				args = args.split(',');
+				for(var i =0; i < args.length; i++){
+					args[i] = this.format_dot_o(a,args[i]) || args[i];
+				}
+				//console.info(args +"-"+func);
+				return func.apply(a,args);
+			}else{
+				var expression = value.match(/([^\.]+)/g);//[0-9a-zA-Z_]
+				var v = a[expression[0]];
+				for(var i=1; i < expression.length; i ++){
+					v = v && v[expression[i]];
+				}
+				return this.ifNull(v,"".ifNull(this.eval(value,a),'{'+value+'}'));
+			}
+		},
+		//格式化对象
 		format_o: function(o){
 			var string = this;
 			return this.replace(/\{([^}]+)\}/g,function(index,value){
 				return string.format_dot_o(o,value);
 			});
 		},
+		//格式化数组
 		format_a: function(a){
 			var string = this;
 			return this.replace(/\{([^}]+)\}/g,function(index,value){
 				return string.format_dot_o(a,value);
-				//return  $.string.show(a[value]);	
 			});
 		},
+		//格式化入口
 		format	: function(){
+			var content = this;
 			if(arguments.length > 0){
-				var o = arguments[0];
-				//console.debug('format');
-				if($.isPlainObject(o)){//plain object
-					//console.debug("//plain object");
-					return this.format_o(o);
-				}else if($.isArray(o)){//array
-					//console.debug("//array");
-					return this.format_a(o);
-				}else{//arguments
-					//console.debug("//arguments");
-					var a = [].slice.apply(arguments, [0, arguments.length]);
-					return this.format_a(a);
+				for(var i = 0; i < arguments.length; i++){
+					var o = arguments[i];
+					//console.debug('format');
+					if($.isArray(o)){//array
+						//console.debug("//array");
+						content = content.format_a(o);
+					}else if( typeof o == 'object'){//plain object $.isPlainObject(o)
+						//console.debug("//plain object");
+						content = content.format_o(o);
+					}else{//arguments
+						//console.debug("//arguments");
+						var a = [].slice.apply(arguments, [0, arguments.length]);
+						content = content.format_a(a);
+					}
 				}
+				return content;
 			}else{
 				return this;
 			}
+		},
+		//去前后空格
+		trim : function(){
+			return this.replace(/^\s*|\s*$/img,'');
+		},
+		html : function(){
+			return this.filter({
+				"&amp;" : /&/img,
+				"&lt;" : /</img,
+				"&gt;" : />/img,
+				"&nbsp;" : / /img,
+				"&quot;" : /"/img,
+				"&#39;" : /'/img
+			});
 		}
 	});
 
@@ -99,22 +198,6 @@
 		}
 	});
 
-	$.string = (new function(){
-		this.fill = "..";
-		this.show = function(s,length){
-			var s = this.toString(s) || '';
-			if(length > 0 && s.length > length){
-				s = s.substring(0,length) + this.fill;
-			}else if(s == null){
-				s = "";
-			}
-			return (''+s).trim();
-		};
-		this.toString = function(s){
-			return s == null ? '' : ''+s;
-		};
-	});
-	
 	//setting to string
 	var o2s = function(s){
 		var ss = [];
@@ -125,7 +208,7 @@
 	};
 	
 	/*-----------------------
-	 * ÈÕÖ¾¶ÔÏó
+	 * 日志对象
 	 -----------------------*/
 	var Logger = window.Logger =  function(package){this.init(package);};
 	Logger.getLogger = function(package){
@@ -187,7 +270,7 @@
 	};
 	
 	/*-----------------------
-	 * requestÇëÇó¶ÔÏó
+	 * request请求对象
 	 -----------------------*/
 	$.request = ( new function(){
 		var console = window.console || {};
@@ -223,7 +306,7 @@
 	  	
   	
   	/*-----------------------
-	 * ÈÕÆÚ¸ñÊ½»¯d.f("yyy-MM-dd hh:mm:ss:SS EEE")
+	 * 日期格式化d.f("yyy-MM-dd hh:mm:ss:SS EEE")
 	 -----------------------*/
   	var rs = [
   		{name:'y',y:{regex:/(y+)/,getapi:'getYear',formatter:function(v){
@@ -253,13 +336,13 @@
   		}
   	};
   	var d_ipml = {
-  		weeks: {en:["Sunday","Monday","Thuesday","Wednesay","Tursday","Friday","Saturday"],zh:["ÐÇÆÚÌì","ÐÇÆÚÒ»","ÐÇÆÚ¶þ","ÐÇÆÚÈý","ÐÇÆÚËÄ","ÐÇÆÚÎå","ÐÇÆÚÁù"]},
+  		weeks: {en:["Sunday","Monday","Thuesday","Wednesay","Tursday","Friday","Saturday"],zh:["星期天","星期一","星期二","星期三","星期四","星期五","星期六"]},
   		lang : 'en',
   		rs : rs,
   		dateObj : {},
   		isInit : false,
   		needpad	: true,
-  			/* ²é±í·¨(¹ý³ÌÊ½°æ±¾)  by aimingoo */
+  			/* 查表法(过程式版本)  by aimingoo */
 		pad : function() {
 		  var tbl = [];
 		  return function(num, n) {
@@ -403,7 +486,7 @@
   		return $.extend(this,{s:s,g:g,d:d,l:l});
   	};
   	
-  	//¶¨Ê±Æ÷
+  	//定时器
   	var timmer = function(){
 		this.i = this.interval;
 		this.t = this.timeout;
@@ -414,24 +497,24 @@
 				switch(t){
 					case 's':
 						if(this.start){
-							$.log.info("ÈÎÎñÃû³Æ¡¾{name}\t\t¡¿¿ªÊ¼Ê±¼ä¡¾{start}¡¿".format(this));
+							$.log.info("任务名称【{name}\t\t】开始时间【{start}】".format(this));
 						}
 						break;
 					case 'e':
 						if(this.end){
-							$.log.info("ÈÎÎñÃû³Æ¡¾{name}\t\t¡¿½áÊøÊ±¼ä¡¾{end}¡¿ÏûºÄ¡¾{diff}¡¿ºÁÃë".format(this));
+							$.log.info("任务名称【{name}\t\t】结束时间【{end}】消耗【{diff}】毫秒".format(this));
 						}
 						break;
 					case 'l':
 						for(var i = 1; i < this.time_seq.length; i ++){
 							var p = this.time_seq[i];
-							$.log.info("ÈÎÎñÃû³Æ¡¾{name}-{piece}\t\t¡¿Ö´ÐÐÊ±¼ä¡¾{d}¡¿ÏûºÄ¡¾{diff}¡¿ºÁÃë".format($.extend({},this,p)));
+							$.log.info("任务名称【{name}-{piece}\t\t】执行时间【{d}】消耗【{diff}】毫秒".format($.extend({},this,p)));
 						}
 						break;
 					case 't':
 						if(this.time_seq.length > 1){
 							var p00 = this.time_seq[this.time_seq.length -1];
-							$.log.info("ÈÎÎñÃû³Æ¡¾{name}-{piece}\t\t¡¿Ö´ÐÐÊ±¼ä¡¾{d}¡¿ÏûºÄ¡¾{diff}¡¿ºÁÃë".format($.extend({},this,p00)));
+							$.log.info("任务名称【{name}-{piece}\t\t】执行时间【{d}】消耗【{diff}】毫秒".format($.extend({},this,p00)));
 						}
 						break;	
 					default :break;
@@ -441,7 +524,7 @@
 	};
 	timmer.idmap = {};
 	timmer.fn = {
-		//ÑÓ³Ù¶¨Ê±Æ÷	
+		//延迟定时器	
 		timeout	:function(name,delay,callback,option){
 			$log.debug("[{1}]timmer.timeout[{0}]",delay,name);
 			var o = {};
@@ -461,7 +544,7 @@
 		delay : function(dly,cb,o){
 			this.t('timmer.delay.func'+Date.f() + '-'+ dly,dly,cb,o);
 		},
-		//¼ä¸ô¶¨Ê±Æ÷
+		//间隔定时器
 		interval:function(name,delay,callback,option){
 			$log.debug("[{1}]timmer.interval[{0}]",delay,name);
 			var o = {};
@@ -482,7 +565,7 @@
 			o.id = id;
 			o.status = 0;
 		},
-		//¶¨Ê±Æ÷½áÊø
+		//定时器结束
 		stop	:function(name){
 			if(!timmer.idmap[name]){
 				$log.info("no timer named:[{0}]to timmer.stop",name);
@@ -499,7 +582,7 @@
 				timmer.idmap[name].status = 1;
 			}
 		},
-		//¶¨Ê±Æ÷¿ªÊ¼
+		//定时器开始
 		start	:function(name,delay,callback,option){
 			if(!timmer.idmap[name]){
 				$log.info("no timer named:[{0}]to timmer.start",name);
@@ -524,7 +607,7 @@
 				this.interval(o);
 			}
 		},
-		//ÁÐ³ö¶¨Ê±Æ÷
+		//列出定时器
 		l	: function(){
 			console.info(">>===========================");
 			var i = 0;
@@ -535,7 +618,7 @@
   			console.info("<<===========================");
 			
 		},
-		//¿ªÊ¼¼ÆÊ±
+		//开始计时
 		s	: function(name){
 			var d = new Date();
 			var p0 = {piece:'start',d:d};
@@ -545,7 +628,7 @@
 			this.clock_data[name] = c;
 			return c;
 		},
-		//¼ÆÊ±
+		//计时
 		tm	: function(name,piece){
 			var d = new Date();
 			//console.info('timmer'+d.f());
@@ -563,7 +646,7 @@
 			}
 			return c;
 		},
-		//½áÊø¼ÆÊ±Æ÷
+		//结束计时器
 		e	: function(name){
 			var d = new Date();
 			var c = $.extend(this.clock_data[name],{end:d.f()},clock_impl,{
@@ -581,14 +664,14 @@
 			}
 			return c;
 		},
-		//»ñÈ¡clock¶ÔÏó
+		//获取clock对象
 		g	: function(name){
 			var c = $.extend(this.clock_data[name],clock_impl,{
 				show : function(){this._show('l');}
 			});
 			return c;
 		},
-		//²âÊÔÊÇ·ñ´æÔÚÖ¸¶¨Ãû³Æ¶ÔÏó
+		//测试是否存在指定名称对象
 		test : function(name){
 			return this.clock_data[name] || timmer.idmap[name];
 		}
@@ -608,7 +691,7 @@
 	
 	$.timmer = new timmer();
 	
-	//·Âspring¶¨Ê±Æ÷
+	//仿spring定时器
 	var Package = function(){
 		var packages = [].slice.apply(arguments, [0,arguments.length]);
 		for(var pi = 0; pi < packages.length; pi++){
@@ -624,7 +707,7 @@
 	};
 	Package("spring.Timer","spring.context","spring.timer");
 	spring.Timer = function(){
-		//ÊØ»¤½ø³Ì
+		//守护进程
 		var Deamon = function(timer){
 			var timer_id = 'spring.timer.deamon';
 			var i = {
@@ -645,7 +728,7 @@
 			var task_list = spring.context.task_list = [];
 			var This = this;
 			var i = {
-				//¼àÊÓÆ÷	
+				//监视器	
 				monitor : function(){
 					var d = new Date;
 					var tl = This.filter(d);
@@ -653,18 +736,18 @@
 						$.log.info("spring.timer noop");
 					}
 				},
-				//¹ýÂË·ûºÏÌõ¼þµÄÈÎÎñ
+				//过滤符合条件的任务
 				filter : function(d){
 					var tl = [];
 					for(var i = 0; i < task_list.length; i++){
 						var task = task_list[i];
-						//Ê±¼ä¹æÔò½âÎö
-						//¹æÔòÅÐ¶Ï
+						//时间规则解析
+						//规则判断
 						if(ruler.test(d,task)){
 							tl.push(task);
 							(new Thread).run(task.job);
 						}
-						//¶àÏß³ÌÖ´ÐÐ
+						//多线程执行
 					}
 					return tl;
 				},
@@ -688,7 +771,7 @@
 			};
 			$.extend(this,i);
 		};
-		//Ê±¼ä¹ýÔò½âÎö
+		//时间过则解析
 		var format = "ss mm hh dd MM yyyy EEE";
 		var fs = ["ss","mm","hh","dd","MM","yyyy","EEE"];
 		var Ruler = function(){
@@ -698,7 +781,7 @@
 			//    *  *  *  *  *  *    *
 			//	,/-
 			var i = {
-				//²âÊÔÖ¸¶¨Ê±¼äºÍÊ±¼ä±í´ïÊ½ÊÇ·ñÎÇºÏ	
+				//测试指定时间和时间表达式是否吻合	
 				test : function(d,task){
 					var ds = d.f(format).match(/[\S]+/g);
 					var sds = task.start.f(format).match(/[\S]+/g);
@@ -722,7 +805,7 @@
 							}
 						}
 					}
-					if(ok){//ÔËÐÐ¼ÇÂ¼
+					if(ok){//运行记录
 						runId = ds.splice(flag,ds.length-1-flag).join('-');
 						var log = task.log = task.log || [];
 						if(log.indexOf(runId) >=0){
@@ -736,18 +819,18 @@
 					}
 					return ok;
 				},
-				//²âÊÔÖ¸¶¨Ê±¼äÆ¬¶ÎºÍÊ±¼äÆ¬¶Î±í´ïÊ½ÊÇ·ñÎÇºÏ
+				//测试指定时间片段和时间片段表达式是否吻合
 				testFragment : function(o,s,sd){
 					var es = s.split(',');
 					var ok = false;
 					for(var i = 0; i < es.length; i++){
 						var ss = es[i];
 						var b = false;
-						if(/\/+/g.test(s)){// ÔöÁ¿Ö´ÐÐ /
+						if(/\/+/g.test(s)){// 增量执行 /
 							b = this.testStep(o, ss,sd);
-						}else if(/\-+/g.test(s)){// ·¶Î§Ö´ÐÐ -
+						}else if(/\-+/g.test(s)){// 范围执行 -
 							b = this.testRange(o, ss);
-						}else if(/\*+/g.test(s)){// ·¶Î§Ö´ÐÐ -
+						}else if(/\*+/g.test(s)){// 范围执行 -
 							b = true;
 						}else{
 							b = ss == o;
@@ -807,8 +890,7 @@
   	
   	spring.timer.deamon.run();
 
-
-  	$.fn.jsonp = function(url,data,callback,callname){
+  	$.jsonp = function(url,data,callback,callname){
 		var post = {
 			type: "POST",
 			url: url,
@@ -829,6 +911,9 @@
   		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()) },function(data){
 			if( data.succ ){
 				//success
+				console.info();
+			}else{
+				
 			}
 		},'lotteryDrawCallback');
   	}

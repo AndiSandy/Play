@@ -1,0 +1,1 @@
+lotteryDrawCallback({"bonusRuleTip":"连续打卡<i>3</i>天","succ":true,"triggerBonusRule":true,"prizeCatg":1,"beatRatioTip":"","bonusRuleCode":"BR00002-3","bonusRuleOper":"+","signDate":"20160607","originalPrizeQty":5,"isFullSign":false,"bonusRuleValue":5,"signInRow":3,"finalPrizeQty":10,"prizeName":"云钻","slotNo":1})

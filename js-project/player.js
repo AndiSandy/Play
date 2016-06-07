@@ -346,6 +346,21 @@
 			}
 		}
 	};
+	
+	$.jsonp = function(url,data,callback,callname,method){
+		var post = {
+			type: method||"POST",
+			url: url,
+			cache : false,
+			async : false,
+			data : data,
+			dataType : "jsonp",
+			jsonp : "callback",
+			jsonpCallback : callname,
+			success: callback
+		};
+		$.ajax(post);
+	}
 
 	var Play = {
 		delay:5000,//每次投递的延迟时间
@@ -382,8 +397,8 @@
 				return out.join(",");
 			}
 		},
-		p:function (){
-			var inputNumValue= this.cost;
+		p:function (cost){
+			var inputNumValue= cost || this.cost;
 			var activitId=$("#gameActivitiesConfigureId").val();
 			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
@@ -420,6 +435,19 @@
 				}
 			,this.delay);
 		},
+		play : function(cost,callback){
+			var that = this;
+			function show(data){
+				data && data.content && that.calc(data,function(){
+					that.queryTotal(function(total){
+						$("#myPointDrill").html(total);
+						$("#myPointYun").html(total);
+						that.totalaccount = total;
+					});
+				});
+			}
+			$.get(that.p(cost||this.cost),(callback||show),'json');
+		},
 		init : function(){
 			this.yund.init(this);
 			this.alearn.init(this);
@@ -437,12 +465,12 @@
 		},
 		queryTotal : function(callback){
 			var that = this;
-			var url = "http://vip.suning.com/ajax/user/getPoint.do?callback=callbackFun";
-			$.jsonp(url,{'targetURL' : targetURL},function(data){
+			var url = "http://vip.suning.com/ajax/user/getPoint.do";
+			$.jsonp(url,{'_' : (new Date()).getTime()},function(data){
 				callback.apply(that,[data.totalPoint]);
-			},'callbackFun');
+			},'callbackFun','GET');
 		},
-		calc : function(data){
+		calc : function(data,callback){
 			var get = 0;
 			var reg1 = /恭喜您获得(\d+)个云钻!/,m;
 			var reg2 = /恭喜您,云钻x(\d+)倍,获得了(\d+)个云钻!/;
@@ -473,6 +501,7 @@
 			//本次投递状态,小于0为0，等于0为1，大于0为2
 			this.status = ydstatus.getstatus(getCount);
 			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account,"云钻",this.stat.stat());
+			(callback||$.noop)();
 		},
 		stop:function(){
 			var that = this;
@@ -502,12 +531,12 @@
 			var btnstyle = 'margin-left:10px;color:#fff;background-color:#5bc0de;border-color:#46b8da;display:inline-block;padding:3px 12px;margin-bottom:0;font-size:14px;font-weight:400;line-height:1.42857143;text-align:center;white-space:nowrap;vertical-align:middle;-ms-touch-action:manipulation;touch-action:manipulation;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;background-image:none;border:1px solid transparent;border-radius:4px';
 			var style = "text-align: center;margin-bottom: 20px;background-color: #fff;border: 1px solid transparent;border-radius: 4px;-webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);box-shadow: 0 1px 1px rgba(0,0,0,.05)";
 			var intputstyle = "color:#555;background-color:#fff;background-image:none;border:1px solid #ccc;border-radius:4px;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075);-webkit-transition:border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;-o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s"
-			var that=this,html = "<div name='play' style='position:fixed;width:400px;height:50px;bottom:0px;z-index:2147483649;"+style+"'><input style='"+intputstyle+"'type='text' name='cost' /><input type='button' style='"+btnstyle+"' value='stop' name='stop'><input type='button' style='"+btnstyle+"' value='run' name='run'></div>";
+			var that=this,html = "<div name='player' style='position:fixed;width:400px;height:50px;bottom:0px;z-index:2147483649;"+style+"'><input style='"+intputstyle+"'type='text' name='cost' /><input type='button' style='"+btnstyle+"' value='stop' name='stop'><input type='button' style='"+btnstyle+"' value='run' name='run'><input type='button' style='"+btnstyle+"' value='play' name='play'></div>";
 			$(document.body).append(html);
 			var playEl = $("[name=play]");
 			$('[name=cost]').val(that.cost);
-			$('[name=play]').css('top',(100)+'px')
-			$('[name=play]').css('left',(window.innerWidth/2-playEl.width())+'px')
+			$('[name=player]').css('top',(100)+'px')
+			$('[name=player]').css('left',(window.innerWidth/2-playEl.width())+'px')
 			$('[name=stop]').click(function(){
 				that.destory()
 			});
@@ -515,6 +544,11 @@
 				that.cost = Math.round($('[name=cost]').val() || 10);
 				that.destory();
 				that.run()
+			});
+			$('[name=play]').click(function(){
+				that.cost = Math.round( $('.diam-num').val() || 10);
+				that.destory();
+				that.play()
 			});
 		},
 		dispose:function(){

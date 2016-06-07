@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html ng-app="gameApp">
+<head>
+    <meta charset="utf-8">
+    <title>play game now</title>
+	<link rel="stylesheet" href="css/play.css" />
+	<script type="text/javascript" src="lib/jquery-2.2.4.js"></script>
+	<script type="text/javascript" src="lib/angular.js"></script>
+	<script>
+		var app = angular.module('gameApp', []);
+	</script>
+	<script type="text/javascript" src="base.js"></script>
+</head>
+<body>
+	<div ng-controller="myopiaCtrl">
+		<h1>hello world-{{title}}<br/>
+		</h1>
+	</div>
+	<script type="text/javascript">
+		app.controller('myopiaCtrl', function($scope,$timeout) {
+			
+			$scope.myopia = {
+				title : 'myopia'
+			};
+			
+			function each(arr,callback,delay){
+		        var i = 0;
+		        function e(arr,i){
+		            $timeout(function(){
+		                if( i < arr.length){
+		                    callback(i,arr[i]);
+		                    i++;
+		                    e(arr,i);
+		                }
+		            },delay);
+		        }
+		        e(arr,i);
+		    }
+		});
+	</script>
+</body>
+</html>
