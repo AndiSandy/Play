@@ -69,6 +69,7 @@
 		count : 0,
 		yund : {},
 		records : new Queue(50),
+		alevels : new Queue(50),
 		history: new Queue(50),
 		brain : {
 			rule : [
@@ -285,7 +286,8 @@
 		},
 		before : function( status ){
 			//记录变化数据
-			this.records.qin(status);
+			this.records.qin(status.status);
+			this.alevels.qin(status.alevel);
 			//记录命中数据
 			if( ydstatus.ishit( status ) ){
 				this.history.qin(this.records.copy());
@@ -403,9 +405,9 @@
 			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
 		alearn : autoLearning,
-		control : function(){
+		control : function(data){
 			//学习调整
-			this.alearn.learn(this.status);
+			this.alearn.learn({status:this.status,alevel:data.awardsResult});
 			//跑十次
 			if( this.count < this.min ){
 				//noop
@@ -421,7 +423,7 @@
 							that.account -= that.cost ;
 							//console.info(that.count++,data.content||'no result');
 							data && data.content && that.calc(data);
-							data && data.content && that.control();
+							data && data.content && that.control(data);
 							if( !data || !data.content ){
 								console.info(that.count,'----已掉线啦！');
 							}
@@ -475,6 +477,7 @@
 			var reg1 = /恭喜您获得(\d+)个云钻!/,m;
 			var reg2 = /恭喜您,云钻x(\d+)倍,获得了(\d+)个云钻!/;
 			var _3dstyle = "text-shadow: 0 1px 0 #fff,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:5em;color:red;";
+			
 			if( m = reg1.exec(data.content)){
 				get = Math.round(m[1]||0);
 				if( get == this.cost ){
@@ -494,6 +497,7 @@
 			}else{
 				this.stat.miss ++;
 			}
+			this.alevel = data.awardsResult;
 			this.stat.count ++;
 			this.account += get;
 			//本次投递的命中回归量或降或持平或升
