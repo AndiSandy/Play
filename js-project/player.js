@@ -550,6 +550,32 @@
 				that.destory();
 				that.play()
 			});
+			function sety(cost){
+				$('.diam-num').val(cost);
+				$('[name=cost]').val(cost);
+				that.cost = cost;
+			}
+			function up(e){
+				sety(that.yund.up());
+				e.preventDefault();
+			}
+			function down(e){
+				sety(that.yund.down());
+				e.preventDefault();
+			}
+			$(document).on('keydown',function(e){
+				if( e.keyCode == 40 ){
+					down(e);
+					//return false;
+				}else if( e.keyCode == 38 ){
+					up(e);
+					//return false;
+				}else if( e.keyCode == 37 ){
+					that.play()
+				}else if( e.keyCode == 39 ){
+					console.clear();
+				}
+			})
 		},
 		dispose:function(){
 			$("[name=play]").remove();

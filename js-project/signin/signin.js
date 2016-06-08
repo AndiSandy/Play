@@ -28,6 +28,23 @@
 			return s == null ? '' : ''+s;
 		}
 	});
+
+	$.string = (new function(){
+		this.fill = "..";
+		this.show = function(s,length){
+			var s = this.toString(s) || '';
+			if(length > 0 && s.length > length){
+				s = s.substring(0,length) + this.fill;
+			}else if(s == null){
+				s = "";
+			}
+			return (''+s).trim();
+		};
+		this.toString = function(s){
+			return s == null ? '' : ''+s;
+		};
+	});
+
 	/**
 	 * 微型模板引擎
 	 * example :
@@ -153,6 +170,67 @@
 				"&#39;" : /'/img
 			});
 		}
+	});
+	
+	$.helper = (new function(){
+		//var img_regex = //img;
+		this.tableKey = function(num){
+			var table = "\t";
+			var s = "";
+			for(var i = 0; i < num; i ++){
+				s += table;
+			}
+			return s;
+		};
+		this.toString = function(config,level){
+			var level = level || 0;
+			var tableKey = this.tableKey(level);
+			if(config){
+				var s = "";
+				for(var attr in config){
+					var cv = config[attr];
+					
+					var isobj = false;
+					try{
+						isobj = $.isPlainObject(cv);
+					}catch(e){
+						
+					}
+					if(isobj){
+						s += tableKey + attr + "\n" +this.toString(cv,level + 1);
+					}else if($.isArray(cv)){
+						var sa = attr + "=[";
+						for(var i = 0; i < cv.length; i ++){
+							var ca = cv[i];
+							if( $.isPlainObject(ca)){
+								s += "\n"+tableKey +this.toString(ca,level + 1);
+							}else if($.isArray(ca)){
+								s += "\n"+tableKey +this.toString(ca,level + 1);
+							}else if($.isFunction(ca)){
+								sa += i + "=[function],";	
+							}else{
+								sa += i + "="+ca+",";
+							}
+						}
+						sa += "];\n";
+						s += tableKey + sa;
+					}else if($.isFunction(cv)){
+						s += tableKey + attr + "=[function];\n";		
+					}else{
+						s += tableKey + attr + "=" + cv + ";\n";
+					}
+				}
+				return s;
+			}
+		};
+		this.random = function(max){
+			var max = max || 0;
+			var timesmap = new Date().getTime();
+			var seed = Math.random() * timesmap;
+			var r = max > 0 ? seed % max : seed;
+			r = window.parseInt(r);
+			return r;
+		};
 	});
 
 	$.extend(Array.prototype,{
@@ -890,9 +968,9 @@
   	
   	spring.timer.deamon.run();
 
-  	$.jsonp = function(url,data,callback,callname){
+  	$.jsonp = function(url,data,callback,callname,method){
 		var post = {
-			type: "POST",
+			type: method||"POST",
 			url: url,
 			cache : false,
 			async : false,
@@ -908,21 +986,26 @@
   	//打卡
   	function sign(){
   		var url = "http://vip.suning.com/sign/doSign.do";
-  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()) },function(data){
+  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime() },function(data){
 			if( data.succ ){
 				//success
-				console.info();
+				var content = "打卡成功{prizeName}-{finalPrizeQty}-{beatRatioTip}".format(data);
+				console.info(content);
 			}else{
-				
+				var content = "打卡失败{errorCode}".format(data);
+				console.info(content);
 			}
-		},'lotteryDrawCallback');
+		},'lotteryDrawCallback','GET');
   	}
 
+
 	//定时打卡
-	spring.timer.add({name:'qp',cronExpression:'* * 8 * * *',job:function(){
+	spring.timer.add({name:'qp',cronExpression:'* * 9 * * *',job:function(){
 			sign();
+			console.info('sign...');
 		}
 	});
+
 
 	//live守护不掉线
 	$('[name=deamon]').remove();

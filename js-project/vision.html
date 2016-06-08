@@ -12,23 +12,47 @@
 	<script type="text/javascript" src="base.js"></script>
 
 	<script id="recursion" type="text/ng-template">
-		<div ng-if="levels[index]>0" style="border:{{index}}px {{color}} solid;padding:10px;" ng-include="'recursion'"  ng-init="index=index-1">{{index}}</div>
+		<div ng-if="data.index>0" style="border:{{data.index}}px {{color}} solid;padding:10px;" ng-include="'recursion'"  ng-init="data=levels[data.index]">{{index}}</div>
 	</script>
+
+	<script id="myTemplate" type="text/ng-template">  
+	   <!-- 你要显示的内容，例如 -->  
+	   <div>a:{{data.a}}</div>  
+	   <div>b:{{data.b}}</div>  
+	   <!-- 递归 -->  
+	   <div ng-if="data.child" ng-include="'myTemplate'" ng-init="data=data.child"></div> 
+	</script>  
+
+	<script id="example" type="text/ng-template">
+		example-{{recursion}}
+	</script>
+	 
 </head>
 <body ng-controller="searchCtrl">
-	{{levels[max_div]}}
-	<div ng-include="'recursion'" ng-init="index=max_div" style="border:{{levels[index]}}px {{color}} solid;padding:10px;"></div>
 
+	<div ng-include="'recursion'" ng-init="data=levels[max_div]" style="border:{{levels[max_div].index}}px {{color}} solid;padding:10px;"></div>
+	<div recursion='example'>hello</div>
 	<script type="text/javascript">
-		app.controller('searchCtrl', function($scope,$timeout) {
-			var max_div = 20;
+		var appModule = angular.module('gameApp').directive('recursion',function($compile,$templateCache){
+			var directive =  {
+				restrict:'A',
+		        scope: {'recursion':'='},
+		        link : function(scope, element, attrs) {
+		            directive.template = $templateCache.get(attrs.recursion);
+		        }
+			};
+			return directive;
+		});
+		angular.module('gameApp').controller('searchCtrl', function($scope,$timeout) {
+			var max_div = 9;
 			var levels = [];
 			for(var i = 0; i <= max_div; i ++ ){
-				levels.push(i-1);
+				levels.push({index:i-1});
 			}
 			$scope.max_div = max_div;
 			$scope.levels = levels;
 			$scope.color = 'green';
+			$scope.myData = { a: 123, b: 456, child: { a: 789, b: "hello" } } 
 		});
 	</script>
 </body>
