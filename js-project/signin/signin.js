@@ -1000,7 +1000,7 @@
 
 
 	//定时打卡
-	spring.timer.add({name:'qp',cronExpression:'* * 9 * * *',job:function(){
+	spring.timer.add({name:'qp',cronExpression:'* 50 8 * * *',job:function(){
 			sign();
 			console.info('sign...');
 		}
@@ -1019,6 +1019,6 @@
 			ifEl[0].contentWindow.location.reload();
 		},50000);
 	}
-	deamon();
+	//deamon();
 }(jQuery));
 

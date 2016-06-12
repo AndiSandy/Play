@@ -1,1 +1,0 @@
-console.info('bg-lib-sample');

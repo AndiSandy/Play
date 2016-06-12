@@ -437,18 +437,14 @@
 				}
 			,this.delay);
 		},
-		play : function(cost,callback){
+		play : function(cost,bshow){
 			var that = this;
 			function show(data){
-				data && data.content && that.calc(data,function(){
-					that.queryTotal(function(total){
-						$("#myPointDrill").html(total);
-						$("#myPointYun").html(total);
-						that.totalaccount = total;
-					});
-				});
+				//noop
+				data && data.content && that.calc(data);
+				bshow && that.updateAccount();
 			}
-			$.get(that.p(cost||this.cost),(callback||show),'json');
+			$.get(that.p(cost||this.cost),show,'json');
 		},
 		init : function(){
 			this.yund.init(this);
@@ -464,6 +460,14 @@
 					console.info(e);
 				}
 			}
+		},
+		updateAccount : function(){
+			var that = this;
+			that.queryTotal(function(total){
+				$("#myPointDrill").html(total);
+				$("#myPointYun").html(total);
+				that.totalaccount = total;
+			});
 		},
 		queryTotal : function(callback){
 			var that = this;
@@ -535,7 +539,17 @@
 			var btnstyle = 'margin-left:10px;color:#fff;background-color:#5bc0de;border-color:#46b8da;display:inline-block;padding:3px 12px;margin-bottom:0;font-size:14px;font-weight:400;line-height:1.42857143;text-align:center;white-space:nowrap;vertical-align:middle;-ms-touch-action:manipulation;touch-action:manipulation;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;background-image:none;border:1px solid transparent;border-radius:4px';
 			var style = "text-align: center;margin-bottom: 20px;background-color: #fff;border: 1px solid transparent;border-radius: 4px;-webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);box-shadow: 0 1px 1px rgba(0,0,0,.05)";
 			var intputstyle = "color:#555;background-color:#fff;background-image:none;border:1px solid #ccc;border-radius:4px;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075);-webkit-transition:border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;-o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s"
-			var that=this,html = "<div name='player' style='position:fixed;width:400px;height:50px;bottom:0px;z-index:2147483649;"+style+"'><input style='"+intputstyle+"'type='text' name='cost' /><input type='button' style='"+btnstyle+"' value='stop' name='stop'><input type='button' style='"+btnstyle+"' value='run' name='run'><input type='button' style='"+btnstyle+"' value='play' name='play'></div>";
+			var btnTpl = "<input type='button' style='{btnstyle}' value='{name}' name='{name}'>";
+			var that=this,html = "<div name='player' style='position:fixed;height:50px;bottom:0px;z-index:2147483649;{style}'><input style='{intputstyle}'type='text' name='cost' />update<input type='checkbox' name='bshow' checked/>{btns}</div>".format({
+				style : style,
+				intputstyle : intputstyle,
+				btns : [
+					btnTpl.format({btnstyle:btnstyle,name:'sotp'}),
+					btnTpl.format({btnstyle:btnstyle,name:'run'}),
+					btnTpl.format({btnstyle:btnstyle,name:'play'}),
+					btnTpl.format({btnstyle:btnstyle,name:'update'})
+				].join('')
+			});
 			$(document.body).append(html);
 			var playEl = $("[name=play]");
 			$('[name=cost]').val(that.cost);
@@ -551,8 +565,11 @@
 			});
 			$('[name=play]').click(function(){
 				that.cost = Math.round( $('.diam-num').val() || 10);
-				that.destory();
-				that.play()
+				var bshow = $('[name=bshow]').is(':checked');
+				that.play(null,bshow);
+			});
+			$('[name=update]').click(function(){
+				that.updateAccount();
 			});
 			function sety(cost){
 				$('.diam-num').val(cost);
@@ -567,6 +584,10 @@
 				sety(that.yund.down());
 				e.preventDefault();
 			}
+			function update(e){
+				that.updateAccount();
+				e.preventDefault();
+			}
 			$(document).on('keydown',function(e){
 				if( e.keyCode == 40 ){
 					down(e);
@@ -575,9 +596,12 @@
 					up(e);
 					//return false;
 				}else if( e.keyCode == 37 ){
-					that.play()
+					var bshow = $('[name=bshow]').is(':checked');
+					that.play(null,bshow)
 				}else if( e.keyCode == 39 ){
 					console.clear();
+				}else if( e.keyCode == 17 ){
+					update(e);
 				}
 			})
 		},

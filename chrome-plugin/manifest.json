@@ -7,7 +7,8 @@
         "page": "bg.html"
     },
     "minimum_chrome_version": "18",
-    "permissions": ["http://*/*", "https://*/*", "notifications",
+    "permissions": ["http://*.suning.com/*", "https://*.suning.com/*", 
+        "notifications",
     	"tabs",    
 		"bookmarks", 
 		"contextMenus",
@@ -20,7 +21,7 @@
         "128": "images/icon-128.png"
     },
     
-    "page_action": {
+    "browser_action": {
 	    "default_icon": {                    // 可选
 	      "19": "images/icon-19.png",           // 可选
 	      "38": "images/icon-38.png"            // 可选
@@ -29,12 +30,12 @@
 	    "default_popup": "popup.html"        // 可选
 	},
     "content_scripts": [{
-        "js": ["js/content_sample.js","js/test.js"],
-        "matches": ["http://*/*","https://*/*" ],
+        "js": ["js/test.js"],
+        "matches": ["http://*.suning.com/*","https://*.suning.com/*" ],
         "run_at": "document_end"
     }],
     "web_accessible_resources": ["images/*.png","images/*.gif","js/*.js"],
     "options_page": "options.html",
     "manifest_version": 2,
-    "content_security_policy": "script-src 'self'; object-src 'self'"
+    "content_security_policy": "script-src 'self'; object-src 'self';"
 }

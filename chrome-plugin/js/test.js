@@ -1,3 +1,1 @@
-setTimeout(function(){
-	console.info('content-js-test',play);
-},5000);
+console.info('content-js-test');
