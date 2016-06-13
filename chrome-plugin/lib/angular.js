@@ -20865,9 +20865,15 @@ var styleDirective = valueFn({
 
   publishExternalAPI(angular);
 
-  jqLite(document).ready(function() {
+  angular.init = function(){
     angularInit(document, bootstrap);
+  }
+  jqLite(document).ready(function() {
+    if( !window.angular_delay ){
+      angularInit(document, bootstrap); 
+    }
   });
+
 
 })(window, document);
 

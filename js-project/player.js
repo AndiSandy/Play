@@ -405,9 +405,11 @@
 			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
 		alearn : autoLearning,
+		listeners : [],
 		control : function(data){
+			
 			//学习调整
-			this.alearn.learn({status:this.status,alevel:data.awardsResult});
+			//this.alearn.learn({status:this.status,alevel:data.awardsResult});
 			//跑十次
 			if( this.count < this.min ){
 				//noop
@@ -449,6 +451,7 @@
 		init : function(){
 			this.yund.init(this);
 			this.alearn.init(this);
+			this.listeners.push(this.alearn.learn);
 			if( window.localStorage.stat ){
 				try{
 					this.totalaccount = Math.round($("#myPointDrill").html()) || Math.round(window.localStorage.totalaccount) || 0 ;
@@ -510,6 +513,12 @@
 			this.status = ydstatus.getstatus(getCount);
 			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account,"云钻",this.stat.stat());
 			(callback||$.noop)();
+
+			for(var i = 0; i < this.listeners.length; i ++ ){
+				var listener = this.listeners[i];
+				listener({status:this.status,alevel:data.awardsResult});
+			}
+
 		},
 		stop:function(){
 			var that = this;

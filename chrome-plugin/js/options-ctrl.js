@@ -1,4 +1,6 @@
 (function(){
+
+	
 	var playerModule = angular.module("player",[]).config(function($sceProvider,$compileProvider) {
 		// Completely disable SCE to support IE7.
 		$sceProvider.enabled(false);
@@ -114,5 +116,6 @@
 		/**/
 		$.extend($scope,model,box,{model:model});
 	}]);
+
 
 }());
