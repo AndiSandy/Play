@@ -375,7 +375,6 @@
 	//类定义
 	var Class = function Class(){};
 	Class.extend = function(proto){
-		console.info(111);
 		function Class(){
 			var __proto = this;
 			$.extend(__proto,proto);

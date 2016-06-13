@@ -21,7 +21,6 @@
 			<div class="form-group col-sm-12">
 				<label class="col-sm-1 control-label">资源url:</label>
 				<div class="col-sm-6"><input type="text" class="form-control" ng-model="params.urls" placeholder="资源url,逗号分隔"></div>
-		    	
 			</div>       
 			<button class="btn btn-default col-sm-offset-1" ng-click="model.save()"><i class="fa fa-search"></i>保存</button>
 		 	
