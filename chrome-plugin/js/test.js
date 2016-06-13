@@ -18,7 +18,8 @@ chrome.extension.sendRequest(
     function(response) {
         if (response.yund_option) {
         	if( location.href.indexOf( 'http://vip.suning.com/scdc-web/pointGame/pgWlcm.do' ) >=0 ){
-        		loader('script.src',response.yund_option.res,response.yund_option.host);
+        		loader('script.src',response.yund_option.scripts,response.yund_option.host);
+				loader('link.href',response.yund_option.stylesheets,response.yund_option.host,{type:'text/css','rel':"stylesheet"});
         	}
         }
     }

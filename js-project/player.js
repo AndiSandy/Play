@@ -449,9 +449,12 @@
 			$.get(that.p(cost||this.cost),show,'json');
 		},
 		init : function(){
+			var p = this;
 			this.yund.init(this);
 			this.alearn.init(this);
-			this.listeners.push(this.alearn.learn);
+			this.listeners.push(function(lo){
+				p.alearn.learn(lo);
+			});
 			if( window.localStorage.stat ){
 				try{
 					this.totalaccount = Math.round($("#myPointDrill").html()) || Math.round(window.localStorage.totalaccount) || 0 ;

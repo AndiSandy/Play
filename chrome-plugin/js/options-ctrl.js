@@ -104,7 +104,8 @@
 			modelid : 'yund',
 			params : {},
 			save : function(){
-				this.params.res = this.params.urls.split(',');
+				this.params.scripts = this.params.scriptsTxt.split(',');
+				this.params.stylesheets = this.params.stylesheetsTxt.split(',');
 				_.cache(this.modelid,this.params);
 				alert.success('保存成功');
 			},

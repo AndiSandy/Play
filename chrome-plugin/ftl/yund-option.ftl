@@ -19,8 +19,12 @@
 				<div class="col-sm-3"><input type="text" class="form-control" ng-model="params.host" placeholder="资源域名"></div>
 			</div>
 			<div class="form-group col-sm-12">
-				<label class="col-sm-1 control-label">资源url:</label>
-				<div class="col-sm-6"><input type="text" class="form-control" ng-model="params.urls" placeholder="资源url,逗号分隔"></div>
+				<label class="col-sm-1 control-label">脚本url:</label>
+				<div class="col-sm-6"><input type="text" class="form-control" ng-model="params.scriptsTxt" placeholder="脚本url,逗号分隔"></div>
+			</div>
+			<div class="form-group col-sm-12">
+				<label class="col-sm-1 control-label">样式url:</label>
+				<div class="col-sm-6"><input type="text" class="form-control" ng-model="params.stylesheetsTxt" placeholder="样式url,逗号分隔"></div>
 			</div>       
 			<button class="btn btn-default col-sm-offset-1" ng-click="model.save()"><i class="fa fa-search"></i>保存</button>
 		 	

@@ -4,7 +4,9 @@ $(function(){
 
 
 	var charTpl = [
-		'<div ng-app="player" ng-controller="yundCtrl" style="position:absolute;bottom:0px;width:100%"><div ng-repeat="level in model.levels">{{level}}</div></div>'
+		'<div ng-app="player" ng-controller="yundCtrl" style="position:fixed;bottom:0px;height:110px;width:100%"><div ng-repeat="lo in model.levels" style="width:30px;height:100%;float:left;position: relative;">',
+		'<div style="height:{{((20*lo.alevel)||15)+10}}px;position:absolute;bottom:0px;width: 100%;" class="rate-{{model.cssMap[lo.alevel]}}">{{lo.alevel}}</div>',
+		'</div></div>'
 	];
 	
 	// 对象不存在 回调埋点
@@ -38,8 +40,12 @@ $(function(){
 	_u.until(10,function(){
 		return window.angular;
 	},function(){
-
-		$(charTpl.join('')).appendTo(document.body);
+		var yunEl = $(charTpl.join(''));
+		yunEl.appendTo(document.body);
+		
+		yunEl.css({
+			zIndex:2147483650
+		})
 
 		var playerModule = angular.module("player",[]).config(function($sceProvider,$compileProvider) {
 			// Completely disable SCE to support IE7.
@@ -49,19 +55,31 @@ $(function(){
 
 		playerModule.
 				controller("yundCtrl", ["$scope", "$timeout","$interval","$http", function ($scope,$timeout,$interval,$http) {
+			var cssMap = {
+				'0' : 'zero',
+				'0.5' : 'half',
+				'1' : 'one',
+				'3' : 'three',
+				'5' : 'five'	
+			};
 			var model = {
 				levels : [],
-				play : play,
-				max : 50,
+				play : window.play,
+				max : Math.floor(window.innerWidth /30),
+				cssMap : cssMap,
 				update : function(lo){
-					this.levels.push(lo.alevel);
+					this.levels.push(lo);
 					while( this.levels.length > this.max ){
 						this.levels.shift();
 					}
+					$scope.$apply();
 				},
 				setup : function(play){
+					var m = this;
 					this.play = play;
-					this.play.listeners.push(this.update);
+					this.play.listeners.push(function(lo){
+						m.update(lo);
+					});
 				}
 			};
 			model.setup(play);
