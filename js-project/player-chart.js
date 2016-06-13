@@ -4,9 +4,13 @@ $(function(){
 
 
 	var charTpl = [
-		'<div ng-app="player" ng-controller="yundCtrl" style="position:fixed;bottom:0px;height:110px;width:100%"><div ng-repeat="lo in model.levels" style="width:30px;height:100%;float:left;position: relative;">',
+		'<div ng-app="player" ng-controller="yundCtrl" style="text-align:center;position:fixed;bottom:0px;height:160px;width:100%">',
+		'<div style="width: 100%;height:25px"><div style="width:30px;float:left" ng-repeat="lo in model.last"><div class="kbd ng-binding">{{lo.lastMiss}}</div></div></div>',
+		'<div style="height:135px"><div ng-repeat="lo in model.levels" style="width:30px;height:100%;float:left;position: relative;">',
 		'<div style="height:{{((20*lo.alevel)||15)+10}}px;position:absolute;bottom:0px;width: 100%;" class="rate-{{model.cssMap[lo.alevel]}}">{{lo.alevel}}</div>',
-		'</div></div>'
+		'<div class="kbd">{{lo.miss}}</div>',
+		'</div></div>',
+		'</div>'
 	];
 	
 	// 对象不存在 回调埋点
@@ -64,11 +68,15 @@ $(function(){
 			};
 			var model = {
 				levels : [],
+				last : [],
 				play : window.play,
-				max : Math.floor(window.innerWidth /30),
+				max : Math.floor( document.body.offsetWidth / 30 ),
 				cssMap : cssMap,
 				update : function(lo){
 					this.levels.push(lo);
+					if( lo.alevel >= 3 ){
+						this.last.push(lo);
+					}
 					while( this.levels.length > this.max ){
 						this.levels.shift();
 					}

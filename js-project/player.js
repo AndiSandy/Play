@@ -367,6 +367,7 @@
 	var Play = {
 		delay:5000,//每次投递的延迟时间
 		count : 0,//投递次数
+		missCount : 0,
 		account : 0,//账户数量
 		cost : 10,//每次投递数
 		yund : YunDiamond,//云钻
@@ -517,9 +518,18 @@
 			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account,"云钻",this.stat.stat());
 			(callback||$.noop)();
 
+			var lo = {status:this.status,alevel:data.awardsResult};
+			if( this.alevel >= 3 ){
+				lo.lastMiss = this.missCount;
+				this.missCount = 0;
+			}else{
+				++ this.missCount;
+			}
+			lo.miss = this.missCount;
+
 			for(var i = 0; i < this.listeners.length; i ++ ){
 				var listener = this.listeners[i];
-				listener({status:this.status,alevel:data.awardsResult});
+				listener(lo);
 			}
 
 		},
