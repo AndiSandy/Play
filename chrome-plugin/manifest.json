@@ -30,12 +30,12 @@
 	    "default_popup": "popup.html"        // 可选
 	},
     "content_scripts": [{
-        "js": ["js/test.js"],
+        "js": ["lib/jquery-1.11.1.min.js","lib/base.js","js/test.js"],
         "matches": ["http://*.suning.com/*","https://*.suning.com/*" ],
         "run_at": "document_end"
     }],
-    "web_accessible_resources": ["images/*.png","images/*.gif","js/*.js"],
+    "web_accessible_resources": ["images/*.png","images/*.gif","js/*.js","ftl/*.ftl"],
     "options_page": "options.html",
     "manifest_version": 2,
-    "content_security_policy": "script-src 'self'; object-src 'self';"
+    "content_security_policy": "script-src 'self'; object-src 'self';a-href 'self';"
 }
