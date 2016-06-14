@@ -2064,8 +2064,8 @@
   		ap : 12,//申请数
   		day_courses : 10,//每天学习的课程
   		bad_times : 10,//学习10次进度为0则为坏课程
-  		username : 'xxx',//oa用户名
-  		password : 'xxx',//oa密码
+  		username : '14041326',//oa用户名
+  		password : '@00OOkkkk',//oa密码
   	};
   	if(location.href.indexOf('indexLearningList.do') >= 0){
   		

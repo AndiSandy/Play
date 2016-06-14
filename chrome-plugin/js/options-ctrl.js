@@ -103,14 +103,23 @@
 			title : 'yund options',
 			modelid : 'yund',
 			params : {},
+			resources : [],
+			add : function(){
+				var pojo = {host:this.params.host};
+				this.resources.push(pojo);
+			},
 			save : function(){
-				this.params.scripts = this.params.scriptsTxt.split(',');
-				this.params.stylesheets = this.params.stylesheetsTxt.split(',');
-				_.cache(this.modelid,this.params);
+				for(var i = 0; i < this.resources.length; i ++){
+					var resource = this.resources[i];
+					resource.scripts = (resource.scriptsTxt||'').split(',');
+					resource.stylesheets = (resource.stylesheetsTxt||'').split(',');
+				}
+				_.cache(this.modelid,this);
 				alert.success('保存成功');
 			},
 			init : function(){
-				this.params = _.cache(this.modelid) || {};
+				var pojo = _.cache(this.modelid) || {};
+				$.extend(this,pojo);
 			}
 		};
 		model.init();

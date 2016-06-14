@@ -998,17 +998,6 @@
 		},'lotteryDrawCallback','GET');
   	}
 
-
-	//定时打卡
-	spring.timer.add({name:'qp',cronExpression:'* 50 8 * * *',job:function(){
-			sign();
-			console.info('sign...');
-		}
-	});
-
-
-	//live守护不掉线
-	$('[name=deamon]').remove();
 	function deamon(){
 		var url = "http://vip.suning.com/sign/welcome.do";
 		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
@@ -1019,6 +1008,21 @@
 			ifEl[0].contentWindow.location.reload();
 		},50000);
 	}
-	//deamon();
+
+	var live = $.request.get('live');
+	//live守护不掉线
+	if( !live ){
+		//定时打卡
+		spring.timer.add({name:'qp',cronExpression:'* 50 8 * * *',job:function(){
+				sign();
+				console.info('sign...');
+			}
+		});
+	}else{
+		$('[name=deamon]').remove();
+		deamon();
+	}
+	
+	
 }(jQuery));
 

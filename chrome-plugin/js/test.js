@@ -12,14 +12,31 @@ function loader(attrTpl,resources,root,props){
 		document.body.appendChild(s);
 	}
 }
+var u = {
+	eval : function(code){
+		return eval('('+code+')');
+	}
+}
 // 是否触发展示插件
 chrome.extension.sendRequest(
     {type: "yund", url: location.href},
     function(response) {
         if (response.yund_option) {
-        	if( location.href.indexOf( 'http://vip.suning.com/scdc-web/pointGame/pgWlcm.do' ) >=0 ){
-        		loader('script.src',response.yund_option.scripts,response.yund_option.host);
-				loader('link.href',response.yund_option.stylesheets,response.yund_option.host,{type:'text/css','rel':"stylesheet"});
+        	var yund = response.yund_option,host = yund.host;
+        	for(var i = 0; i < yund.resources.length; i ++ ){
+        		var resource = yund.resources[i];
+        		var matches = resource.matches || '/.*/i';
+        		var fix = false;
+        		if( /^\/[^\/]+\/[img]*$/.exec(matches) ){
+					matches = u.eval(matches);
+					fix = matches.exec( location.href );
+				}else{
+					fix = location.href.indexOf( matches ) >= 0;
+				}
+        		if( fix ){
+        			loader('script.src',resource.scripts,resource.host || yund.host );
+					loader('link.href',resource.stylesheets,resource.host || yund.host ,{type:'text/css','rel':"stylesheet"});
+        		}
         	}
         }
     }

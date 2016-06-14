@@ -639,14 +639,45 @@
 			}
 		}
 	}
-
+	//create
+	var dbName = "play",loTableName="play_T_lo";
+	Play.listeners.push(function(lo){
+		lo.now = _.now();
+		lo.uuid = _.$uuid();
+		lo.syn = 0;
+		/**/
+		storedb('player').insert(lo,function(err){
+			//console.error('数据持久化出错',err);
+		})
+		/*
+		$.indexedDB(dbName).objectStore(loTableName).add(lo,true).then(function(val) {
+			lo.id = val;
+		    console.info('数据持久化ed',val);
+		}, console.error);
+		*/
+	});
 	window.play = Play;
 
 }());
 
 $(function(){
 	play.dispose();
-	play.render();	
+	play.render();
+	/*
+	var dbName = "play",loTableName="play_T_lo";
+	$.indexedDB(dbName, {
+	    "schema": {
+	        2: function(v) {
+	            var objectStore = v.createObjectStore(loTableName, {
+	                "keyPath": "id",
+	                "autoIncrement": true
+	            });
+	            objectStore.createIndex("syn");
+	            console.info("Created new object store");
+	        }
+	    }
+	}).then(console.info, console.error);
+	*/
 });
 
 //Play.cost = 10;

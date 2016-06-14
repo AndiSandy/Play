@@ -364,12 +364,60 @@
 			return cacheObj[name];
 		}
 	}
+
+	function uuid() {
+		var s = [];
+		var hexDigits = "0123456789abcdef";
+		for (var i = 0; i < 36; i++) {
+		s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+		}
+		s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
+		s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+		s[8] = s[13] = s[18] = s[23] = "-";
+
+		var uuid = s.join("");
+		return uuid;
+	}
+	function copy(omap,attrs){
+		var co = {};
+		for( var i = 0; i < attrs.length; i ++ ){
+			var attr = attrs[i];
+			co[attr] = omap[attr];
+		}
+		return co;
+	}
+	function now( format ){
+		var now = new Date();
+		var attrs = {
+				yyyy : 'getFullYear',
+				mm : 'getMonth',
+				dd : 'getDate',
+				hh : 'getHours',
+				MM : 'getMinutes',
+				ss : 'getSeconds',
+				SSS : 'getMilliseconds'
+		};
+		var values = {};
+		for( attr in attrs ){
+			var v = now[attrs[attr]]();
+			values[attr] = v;
+		}
+		return (format || "{yyyy}-{mm}-{dd+1} {hh}:{MM}:{ss}").format(values);
+	}
+
 	window._ = {
 			objarr2map : objarr2map,
 			arr2map : arr2map,
 			map2objarr : map2objarr,
 			map2arr : map2arr,
-			cache : cache
+			cache : cache,
+			uuid : uuid,
+			copy : copy,
+			now : now,
+			$uuid : function(){
+				var uuid = this.uuid();
+				return uuid.replace(/-/g,'');
+			}
 	};
 
 	//类定义

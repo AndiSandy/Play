@@ -80,6 +80,9 @@ $(function(){
 					while( this.levels.length > this.max ){
 						this.levels.shift();
 					}
+					while( this.last.length > this.max ){
+						this.last.shift();
+					}
 					$scope.$apply();
 				},
 				setup : function(play){
