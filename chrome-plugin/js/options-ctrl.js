@@ -118,7 +118,7 @@
 				alert.success('保存成功');
 			},
 			init : function(){
-				var pojo = _.cache(this.modelid) || {};
+				var pojo = _.cache(this.modelid) || {"title":"yund options","modelid":"yund","params":{"host":"http://localhost:9080/"},"resources":[{"host":"http://10.27.93.163:8000/js-project/","scriptesTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","matches":"/pointGame/pgWlcm.do","name":"yund","scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]},{"host":"http://10.27.93.163:8000/js-project/","matches":"/sign/welcome.do","scriptsTxt":"signin/signin.js","name":"signin","scripts":["signin/signin.js"],"stylesheets":[""]},{"host":"http://10.27.93.163:8000/js-project/","name":"el","matches":"/indexLearningList|oa/","scriptsTxt":"el/e-learning-auto.js","scripts":["el/e-learning-auto.js"],"stylesheets":[""]}],"host":"http://localhost:9080/","urls":"lib/angular.js,base.js,player.js,player-chart.js","res":["lib/angular.js","base.js","player.js","player-chart.js"],"scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]};
 				$.extend(this,pojo);
 			}
 		};
