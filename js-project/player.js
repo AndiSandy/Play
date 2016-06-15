@@ -532,6 +532,7 @@
 			var lo = {status:this.status,alevel:data.awardsResult,cost:data.cost};
 			if( this.alevel >= 3 ){
 				lo.lastMiss = this.missCount;
+				this.lastLo = this.lastLo |{};
 				this.lastLo.last = true;
 				this.missCount = 0;
 			}else{
