@@ -202,7 +202,7 @@
 							bcheck = expro2.operate( expro1 );
 						}
 					}else{
-						var expro = this.exec( exprs[0] );
+						var expro = this.exec( exprs[0],context );
 						bcheck = expro.result;
 					}
 					
