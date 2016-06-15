@@ -15,7 +15,7 @@
 		<div id="model-{{model.modelid}}" class="panel-collapse panel-body collapse in">
 			<div class="form-group col-sm-12">
 				<label class="col-sm-1 control-label">资源服务器:</label>
-				<div class="col-sm-3"><input type="text" class="form-control" ng-model="params.host" placeholder="资源域名"></div>
+				<div class="col-sm-3"><input type="text" class="form-control" ng-model="host" placeholder="资源域名"></div>
 				<button class="btn btn-default" ng-click="model.add()"><i class="fa fa-search"></i>添加</button>
 				<button class="btn btn-default" ng-click="model.save()"><i class="fa fa-search"></i>保存</button>
 			</div>

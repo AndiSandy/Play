@@ -403,6 +403,7 @@
 		p:function (cost){
 			var inputNumValue= cost || this.cost;
 			var activitId=$("#gameActivitiesConfigureId").val();
+			this.activitId = activitId;
 			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
 		alearn : autoLearning,
@@ -444,8 +445,18 @@
 			var that = this;
 			function show(data){
 				//noop
-				data && data.content && that.calc(data);
-				bshow && that.updateAccount();
+				if( data ){
+					data.cost = cost || that.cost;
+					data.content && that.calc(data);
+					bshow && that.updateAccount();
+					var activitId = that.activitId;
+					var ao = _.cache('activitId') || {};
+					var aoo = ao[activitId] = ao[activitId] || {};
+					var rateArr = aoo.rateArr = aoo.rateArr || {};
+					rateArr[data.result] = {index:data.result,level:data.awardsResult};
+					ao[activitId] = aoo ;
+					_.cache('activitId',ao);	
+				}
 			}
 			$.get(that.p(cost||this.cost),show,'json');
 		},
@@ -473,7 +484,7 @@
 			that.queryTotal(function(total){
 				$("#myPointDrill").html(total);
 				$("#myPointYun").html(total);
-				that.totalaccount = total;
+				that.totalaccount = Math.ceil(total);
 			});
 		},
 		queryTotal : function(callback){
@@ -510,23 +521,25 @@
 			}
 			this.alevel = data.awardsResult;
 			this.stat.count ++;
-			this.account += get;
 			//本次投递的命中回归量或降或持平或升
-			var getCount = this.getCount = get - this.cost;
+			var getCount = this.getCount = get - data.cost;
+			this.account += getCount;
 			//本次投递状态,小于0为0，等于0为1，大于0为2
 			this.status = ydstatus.getstatus(getCount);
-			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",this.totalaccount + this.account,"云钻",this.stat.stat());
+			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",(this.totalaccount + this.account),"云钻",this.stat.stat());
 			(callback||$.noop)();
 
-			var lo = {status:this.status,alevel:data.awardsResult};
+			var lo = {status:this.status,alevel:data.awardsResult,cost:data.cost};
 			if( this.alevel >= 3 ){
 				lo.lastMiss = this.missCount;
+				this.lastLo.last = true;
 				this.missCount = 0;
 			}else{
 				++ this.missCount;
 			}
 			lo.miss = this.missCount;
 
+			this.lastLo = lo;
 			for(var i = 0; i < this.listeners.length; i ++ ){
 				var listener = this.listeners[i];
 				listener(lo);

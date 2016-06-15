@@ -99,16 +99,18 @@
 
 	playerModule.
 			controller("yundCtrl", ["$scope", "$timeout","$interval","$http", function ($scope,$timeout,$interval,$http) {
+		var that = $scope;
 		var model = {
 			title : 'yund options',
 			modelid : 'yund',
-			params : {},
 			resources : [],
+			v : 1,
 			add : function(){
-				var pojo = {host:this.params.host};
+				var pojo = {host:that.host};
 				this.resources.push(pojo);
 			},
 			save : function(){
+				this.host = that.host;
 				for(var i = 0; i < this.resources.length; i ++){
 					var resource = this.resources[i];
 					resource.scripts = (resource.scriptsTxt||'').split(',');
@@ -118,7 +120,13 @@
 				alert.success('保存成功');
 			},
 			init : function(){
-				var pojo = _.cache(this.modelid) || {"title":"yund options","modelid":"yund","params":{"host":"http://localhost:9080/"},"resources":[{"host":"http://10.27.93.163:8000/js-project/","scriptesTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","matches":"/pointGame/pgWlcm.do","name":"yund","scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]},{"host":"http://10.27.93.163:8000/js-project/","matches":"/sign/welcome.do","scriptsTxt":"signin/signin.js","name":"signin","scripts":["signin/signin.js"],"stylesheets":[""]},{"host":"http://10.27.93.163:8000/js-project/","name":"el","matches":"/indexLearningList|oa/","scriptsTxt":"el/e-learning-auto.js","scripts":["el/e-learning-auto.js"],"stylesheets":[""]}],"host":"http://localhost:9080/","urls":"lib/angular.js,base.js,player.js,player-chart.js","res":["lib/angular.js","base.js","player.js","player-chart.js"],"scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]};
+				var config = {v:1,"title":"yund options","modelid":"yund","resources":[{"host":"http://10.27.93.163:8000/js-project/","scriptesTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","matches":"/pointGame/pgWlcm.do","name":"yund","scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]},{"host":"http://10.27.93.163:8000/js-project/","matches":"/sign/welcome.do","scriptsTxt":"signin/signin.js","name":"signin","scripts":["signin/signin.js"],"stylesheets":[""]},{"host":"http://10.27.93.163:8000/js-project/","name":"el","matches":"/indexLearningList|oa/","scriptsTxt":"el/e-learning-auto.js","scripts":["el/e-learning-auto.js"],"stylesheets":[""]}],"host":"http://localhost:9080/","urls":"lib/angular.js,base.js,player.js,player-chart.js","res":["lib/angular.js","base.js","player.js","player-chart.js"],"scriptsTxt":"lib/jquery.indexeddb.js,lib/storedb.js,lib/angular.js,base.js,player.js,player-chart.js","stylesheetsTxt":"css/play.css","scripts":["lib/jquery.indexeddb.js","lib/storedb.js","lib/angular.js","base.js","player.js","player-chart.js"],"stylesheets":["css/play.css"]};
+				var pojo = _.cache(this.modelid);
+				if( this.v != pojo.v ){
+					pojo = config;
+					_.cache(this.modelid,pojo);
+					console.info('update config...');
+				}
 				$.extend(this,pojo);
 			}
 		};

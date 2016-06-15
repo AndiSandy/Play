@@ -5,11 +5,14 @@ $(function(){
 
 	var charTpl = [
 		'<div ng-app="player" ng-controller="yundCtrl" style="text-align:center;position:fixed;bottom:0px;height:160px;width:100%">',
-		'<div style="width: 100%;height:25px"><div style="width:30px;float:left" ng-repeat="lo in model.last"><div class="kbd ng-binding">{{lo.lastMiss}}</div></div></div>',
+		//丢失次数
+		'<div style="width: 100%;height:25px"><div style="width:30px;float:left" ng-repeat="lo in model.last"><div class="kbd ng-binding rate-half">{{lo.lastMiss}}</div></div></div>',
+		//表图
 		'<div style="height:135px"><div ng-repeat="lo in model.levels" style="width:30px;height:100%;float:left;position: relative;">',
 		'<div style="height:{{((20*lo.alevel)||15)+10}}px;position:absolute;bottom:0px;width: 100%;" class="rate-{{model.cssMap[lo.alevel]}}">{{lo.alevel}}</div>',
-		'<div class="kbd">{{lo.miss}}</div>',
+		'<div class="kbd {{lo.last?\'rate-half\':\'\'}}">{{lo.miss}}</div>',
 		'</div></div>',
+
 		'</div>'
 	];
 	
