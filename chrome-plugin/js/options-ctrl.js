@@ -75,6 +75,11 @@
 						name:'yund',
 						uri : 'ftl/yund-option.ftl',
 						icon : 'fa-lemon-o'
+					},
+					{
+						name:'config',
+						uri : 'ftl/yund-config.ftl',
+						icon : 'fa-lemon-o'
 					}
 				]
 			}
@@ -82,7 +87,7 @@
 		var action = {
 			currAction : {uri:'ftl/yund-option.ftl'},
 			doaction : function(action){
-				this.currAction = action;
+				$scope.uri = action.uri;
 			}
 		};
 		var user = {
@@ -128,6 +133,40 @@
 					console.info('update config...');
 				}
 				$.extend(this,pojo);
+			}
+		};
+		model.init();
+		/**/
+		$.extend($scope,model,box,{model:model});
+	}]);
+
+	playerModule.
+			controller("configCtrl", ["$scope", "$timeout","$interval","$http", function ($scope,$timeout,$interval,$http) {
+		var that = $scope;
+		var model = {
+			title : 'yund config',
+			modelid : 'yund_config',
+			configList : [],
+			v : 1,
+			add : function(){
+				var pojo = {};
+				this.configList.push(pojo);
+			},
+			save : function(){
+				var config = _.arr2map(this.configList,'name','value');
+				_.cache(this.modelid,config);
+				alert.success('保存成功');
+			},
+			init : function(){
+				var config = {v:1};
+				var pojo = _.cache(this.modelid) || {};
+				if( this.v != pojo.v ){
+					pojo = config;
+					_.cache(this.modelid,pojo);
+					console.info('update config...');
+				}
+				var configList = _.map2arr(pojo,'name','value');
+				this.configList = configList;
 			}
 		};
 		model.init();

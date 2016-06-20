@@ -41,3 +41,13 @@ chrome.extension.sendRequest(
         }
     }
 );
+//保存配置
+chrome.extension.sendRequest(
+    {type: "yund_config", url: location.href},
+    function(response) {
+        if (response.yund_config) {
+        	var yund_config = response.yund_config;
+        	_.cache("yund_config",yund_config);
+        }
+    }
+);
