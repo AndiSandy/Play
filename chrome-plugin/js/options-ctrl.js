@@ -155,17 +155,20 @@
 			save : function(){
 				var config = _.arr2map(this.configList,'name','value');
 				_.cache(this.modelid,config);
+				_.cache(this.modelid + 'list',this.configList);
 				alert.success('保存成功');
 			},
 			init : function(){
 				var config = {v:1};
 				var pojo = _.cache(this.modelid) || {};
+				var defList = [{"name":"v","value":1,"desc":"版本"},{"name":"sign_time_el","value":"* * 9 * * *","desc":"签到时间","memo":"spring定时任务表达式"},{"name":"liveTime","value":"60000","desc":"检活时间间隔","memo":"毫秒"}];
 				if( this.v != pojo.v ){
 					pojo = config;
 					_.cache(this.modelid,pojo);
+					_.cache(this.modelid + 'list',defList);
 					console.info('update config...');
 				}
-				var configList = _.map2arr(pojo,'name','value');
+				var configList = _.cache(this.modelid + 'list') || _.map2arr(pojo,'name','value');
 				this.configList = configList;
 			}
 		};

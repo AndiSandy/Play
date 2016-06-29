@@ -22,15 +22,19 @@
 			  <thead>
 			    <tr>
 			      <th>#</th>
-			      <th>配置项名称</th>
+			      <th>配置名称</th>
+			      <th>配置描述</th>
 			      <th>配置内容</th>
+			      <th>配置备注</th>
 			    </tr>
 			  </thead>
 			  <tbody>
 			    <tr ng-repeat="pojo in configList track by $index" tabindex="{{$index+1}}">
 			      <td>{{$index}}</td>
-			      <td><input type="text" class="form-control col-sm-2" ng-model="pojo.name" placeholder="配置项名称"></td>
+			      <td><input type="text" class="form-control col-sm-2" ng-model="pojo.name" placeholder="配置名称"></td>
+			      <td><input type="text" class="form-control col-sm-2" ng-model="pojo.desc" placeholder="配置描述"></td>
 			      <td><input type="text" class="form-control col-sm-4" ng-model="pojo.value" placeholder="配置内容"></td>
+			      <td><input type="text" class="form-control col-sm-2" ng-model="pojo.memo" placeholder="配置备注"></td>
 			    </tr>
 			  </tbody>
 			</table>

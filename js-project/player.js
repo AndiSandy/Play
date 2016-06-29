@@ -443,9 +443,13 @@
 		},
 		play : function(cost,bshow){
 			var that = this;
+			var now = _.now();
+			var uuid = _.$uuid();
 			function show(data){
 				//noop
 				if( data ){
+					data.now = now;
+					data.uuid = uuid;
 					data.cost = cost || that.cost;
 					data.content && that.calc(data);
 					bshow && that.updateAccount();
@@ -495,6 +499,7 @@
 			},'callbackFun','GET');
 		},
 		calc : function(data,callback){
+			var that = this;
 			var get = 0;
 			var reg1 = /恭喜您获得(\d+)个云钻!/,m;
 			var reg2 = /恭喜您,云钻x(\d+)倍,获得了(\d+)个云钻!/;
@@ -528,8 +533,8 @@
 			this.status = ydstatus.getstatus(getCount);
 			console.info(this.count++,data.content,"本次消费",this.cost,"个云钻,获得",get,"个云钻,本次总共获得",this.account,"历史总共",(this.totalaccount + this.account),"云钻",this.stat.stat());
 			(callback||$.noop)();
-
-			var lo = {status:this.status,alevel:data.awardsResult,cost:data.cost};
+			
+			var lo = {status:this.status,alevel:data.awardsResult,cost:data.cost,index:data.result,activitId:that.activitId,now:data.now,uuid:data.uuid};
 			if( this.alevel >= 3 ){
 				lo.lastMiss = this.missCount;
 				this.lastLo = this.lastLo |{};
@@ -656,19 +661,16 @@
 	//create
 	var dbName = "play",loTableName="play_T_lo";
 	Play.listeners.push(function(lo){
-		lo.now = _.now();
-		lo.uuid = _.$uuid();
 		lo.syn = 0;
 		/**/
 		storedb('player').insert(lo,function(err){
 			//console.error('数据持久化出错',err);
 		})
-		/*
-		$.indexedDB(dbName).objectStore(loTableName).add(lo,true).then(function(val) {
+		/**/
+		$.indexedDB(dbName).objectStore(loTableName,true).add(lo).then(function(val) {
 			lo.id = val;
 		    console.info('数据持久化ed',val);
-		}, console.error);
-		*/
+		}, function(){console.error(arguments)});
 	});
 	window.play = Play;
 
@@ -677,7 +679,7 @@
 $(function(){
 	play.dispose();
 	play.render();
-	/*
+	/**/
 	var dbName = "play",loTableName="play_T_lo";
 	$.indexedDB(dbName, {
 	    "schema": {
@@ -686,12 +688,12 @@ $(function(){
 	                "keyPath": "id",
 	                "autoIncrement": true
 	            });
-	            objectStore.createIndex("syn");
+	            //objectStore.createIndex("syn");
 	            console.info("Created new object store");
 	        }
 	    }
-	}).then(console.info, console.error);
-	*/
+	}).then(function(){console.info('create table success',arguments)}, function(){console.info(arguments)});
+	
 });
 
 //Play.cost = 10;

@@ -381,7 +381,8 @@
 		var search = location.search.substring(1);
 		this.init(search);
 	});
-	  	
+	
+	window.debug = !!$.request.get('debug');
   	
   	/*-----------------------
 	 * 日期格式化d.f("yyy-MM-dd hh:mm:ss:SS EEE")
@@ -983,32 +984,6 @@
 		$.ajax(post);
 	}
 
-  	//打卡
-  	function sign(){
-  		var url = "http://vip.suning.com/sign/doSign.do";
-  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime() },function(data){
-			if( data.succ ){
-				//success
-				var content = "打卡成功{prizeName}-{finalPrizeQty}-{beatRatioTip}".format(data);
-				console.info(content);
-			}else{
-				var content = "打卡失败{errorCode}".format(data);
-				console.info(content);
-			}
-		},'lotteryDrawCallback','GET');
-  	}
-
-	function deamon(){
-		var url = "http://vip.suning.com/sign/welcome.do";
-		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
-		var ifEl = $(iframeHtml);
-		$(document.body).append(ifEl);
-		setInterval(function(){
-			console.info('will living now!!!');
-			ifEl[0].contentWindow.location.reload();
-		},50000);
-	}
-
 	/* ----------================extend=============--------------*/
 	/**
 	 * map转数组
@@ -1081,8 +1056,45 @@
 			cache : cache
 	};
 
-	var live = $.request.get('live');
-	//live守护不掉线
+	//打卡
+  	function sign(){
+  		var url = "http://vip.suning.com/sign/doSign.do";
+  		var d = new Date;
+  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime() },function(data){
+			if( data.succ ){
+				//success
+				var content = "[{f()}]<br/>打卡成功{prizeName}-{finalPrizeQty}-{beatRatioTip}".format(data,d);
+				print(content);
+			}else{
+				var content = "[{f()}]<br/>打卡失败{errorCode}".format(data,d);
+				print(content);
+			}
+		},'lotteryDrawCallback','GET');
+  	}
+  	function print(msg){
+  		var consoleEl = $('[console]');
+  		var msgTpl = '<span class="label-info msg">{0}<span>'.format(msg);
+  		consoleEl.append(msgTpl);
+  	}
+	function deamon(time){
+		var url = "http://vip.suning.com/sign/welcome.do?live=true";
+		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
+		var ifEl = $(iframeHtml);
+		$(document.body).append(ifEl);
+		var consoleEl = '<div console style="position:fixed;width:300px;height:100%;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<span></div>';
+		$(document.body).append(consoleEl);
+		setInterval(function(){
+			console.clear();
+			console.info(Date.f(),'will living now!!!');
+			try{
+				ifEl[0].contentWindow.location.reload();	
+			}catch(e){
+				console.info(Date.f(),'离线异常，正在重新载入');
+				ifEl[0].src = url;
+			}
+		},time||50000);
+	}
+	var live = $.request.get('live') == 'true';
 	if( !live ){
 		//定时打卡
 		var yund_config = _.cache("yund_config") || {};
@@ -1092,9 +1104,10 @@
 				console.info('sign...');
 			}
 		});
-	}else{
+
+		var liveTime = yund_config.liveTime;
 		$('[name=deamon]').remove();
-		deamon();
+		deamon(liveTime);
 	}
 	
 	
