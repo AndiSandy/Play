@@ -1081,7 +1081,7 @@
 		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
 		var ifEl = $(iframeHtml);
 		$(document.body).append(ifEl);
-		var consoleEl = '<div console style="position:fixed;width:300px;height:100%;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<span></div>';
+		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<span></div>';
 		$(document.body).append(consoleEl);
 		setInterval(function(){
 			console.clear();
