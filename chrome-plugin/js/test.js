@@ -1,7 +1,10 @@
 function loader(attrTpl,resources,root,props){
 	var attrs = attrTpl.split('.');
+	if( !resources || resources.length == 0 ) return;
 	for(var i = 0; i < resources.length; i++ ){
-		var content = root+resources[i];
+		var content = resources[i];
+		if( content == "" ) continue;
+		var content = root + content;
 		var s = document.createElement(attrs[0]);
 		if( props ){
 			for(var prop in props){
@@ -34,7 +37,7 @@ chrome.extension.sendRequest(
 					fix = location.href.indexOf( matches ) >= 0;
 				}
         		if( fix ){
-        			loader('script.src',resource.scripts,resource.host || yund.host );
+        			loader('script.src',resource.scripts,resource.host || yund.host ,{type:'text/javascript'});
 					loader('link.href',resource.stylesheets,resource.host || yund.host ,{type:'text/css','rel':"stylesheet"});
         		}
         	}

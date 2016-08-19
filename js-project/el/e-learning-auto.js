@@ -112,45 +112,140 @@
 	
 	//////////base///////////////////
 	$.extend(String.prototype,{
-		format_dot_o : function(a,value){
-			var expression = value.match(/([^\.]+)/g);//[0-9a-zA-Z_]
-			var v = a[expression[0]];
-			for(var i=1; i < expression.length; i ++){
-				v = v && v[expression[i]];
-			}
-			return $.string.show(v);
+		wrap : function(w){
+			var s = w.split('');
+			s[1] = s[1] || s[0];
+			return [s[0],this,s[1]].join('');
 		},
+		unwrap : function(){
+			var s = this;
+			return s.slice(1,s.length-1);
+		},
+		is : function(s){
+			return this == s;
+		},
+		eq : function(s){
+			return this == s;
+		},
+		//过滤字符
+		filter : function(chars){
+			var s = this;
+			if(chars){
+				for(var key in chars){
+					s = s.replace(chars[key], key);
+				}
+			}
+			return s;
+		},
+		ifNull : function(a,ifNull){
+			return a == null ? ifNull : a;
+		},
+		isEmpty : function(){
+			return this.trim() == "";
+		},
+		//string转化为json
+		json : function(){
+			return this.eval(this);
+		},
+		eval : function(v,scope){
+			try{
+				with(scope || window){
+					return eval("("+v+")");
+				}
+			}catch(e){
+				warn && console.warn(e.message);
+				return null;
+			}
+		},
+		//格式化带点的字符串对象 shop.shopId
+		format_dot_o : function(a,value){
+			var func_reg = /([^\(]+)\(([^\)]+)\)/ig;
+			if(func_reg.test(value)){//function
+				var args = RegExp.$2;
+				var func = RegExp.$1;
+				func = this.format_dot_o(a,func) || function(){return func;};
+				args = args.split(',');
+				for(var i =0; i < args.length; i++){
+					args[i] = this.format_dot_o(a,args[i]) || args[i];
+				}
+				//console.info(args +"-"+func);
+				return func.apply(a,args);
+			}else{
+				var expression = value.match(/([^\.]+)/g);//[0-9a-zA-Z_]
+				var v = a[expression[0]];
+				for(var i=1; i < expression.length; i ++){
+					v = v && v[expression[i]];
+				}
+				return this.ifNull(v,"".ifNull(this.eval(value,a),'{'+value+'}'));
+			}
+		},
+		//格式化对象
 		format_o: function(o){
 			var string = this;
 			return this.replace(/\{([^}]+)\}/g,function(index,value){
 				return string.format_dot_o(o,value);
 			});
 		},
+		//格式化数组
 		format_a: function(a){
 			var string = this;
 			return this.replace(/\{([^}]+)\}/g,function(index,value){
 				return string.format_dot_o(a,value);
-				//return  $.string.show(a[value]);	
 			});
 		},
+		//格式化入口
 		format	: function(){
+			var content = this;
 			if(arguments.length > 0){
-				var o = arguments[0];
-				//console.debug('format');
-				if($.isPlainObject(o)){//plain object
-					//console.debug("//plain object");
-					return this.format_o(o);
-				}else if($.isArray(o)){//array
-					//console.debug("//array");
-					return this.format_a(o);
-				}else{//arguments
-					//console.debug("//arguments");
-					var a = [].slice.apply(arguments, [0, arguments.length]);
-					return this.format_a(a);
+				for(var i = 0; i < arguments.length; i++){
+					var o = arguments[i];
+					//console.debug('format');
+					if($.isArray(o)){//array
+						//console.debug("//array");
+						content = content.format_a(o);
+					}else if( typeof o == 'object'){//plain object $.isPlainObject(o)
+						//console.debug("//plain object");
+						content = content.format_o(o);
+					}else{//arguments
+						//console.debug("//arguments");
+						var a = [].slice.apply(arguments, [0, arguments.length]);
+						content = content.format_a(a);
+					}
 				}
+				return content;
 			}else{
 				return this;
 			}
+		},
+		//去前后空格
+		trim : function(){
+			return this.replace(/^\s*|\s*$/img,'');
+		},
+		//前补位
+		prePad : function(l,p){
+			var len = l - this.length;
+			return len > 0 ? Array(len+1).join(p)+this:this;
+		},
+		html : function(){
+			/*
+			var htmlencode = $('[htmlencode]');
+			if( htmlencode.size() == 0 ){
+				htmlencode = $('<div htmlencode style="display:none;"></div>');
+				htmlencode.appendTo('body');
+			}
+			try{
+				return htmlencode.text(this.toString()).html();
+			}catch(e){
+				debug && console.info(e);
+			}*/
+			return this.filter({
+				"&amp;" : /&/img,
+				"&lt;" : /</img,
+				"&gt;" : />/img,
+				"&nbsp;" : / /img,
+				"&quot;" : /"/img,
+				"&#39;" : /'/img
+			});
 		}
 	});
 	
