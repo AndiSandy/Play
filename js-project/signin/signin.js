@@ -1075,6 +1075,7 @@
   		var consoleEl = $('[console]');
   		var msgTpl = '<span class="label-info msg">{0}<span>'.format(msg);
   		consoleEl.append(msgTpl);
+		consoleEl.scrollTop(consoleEl.scrollTop()+10000)
   	}
 	function deamon(time){
 		var url = "http://vip.suning.com/sign/welcome.do?live=true";

@@ -1,9 +1,31 @@
+//数组延迟执行
+Array.prototype.each4delay = function(f,t,auto,end){
+	 var a = this,auto = auto == null ? true : auto ;
+	 a.i = 0;
+	 a.tid = 0;
+	 function callback(a){
+		  if( a.i < a.length ){
+			 a.tid = setTimeout(function(){
+				 function next(){
+					callback(a);
+				 };
+				 f(a.i,a[a.i],next);
+				 a.i ++;
+				 auto && next();
+			  },t|1000);
+		  }else{
+			 clearTimeout(a.tid);
+			 end && end(a);
+		  }
+	 }
+	 callback(a);
+};
 function loader(attrTpl,resources,root,props){
 	var attrs = attrTpl.split('.');
 	if( !resources || resources.length == 0 ) return;
-	for(var i = 0; i < resources.length; i++ ){
+	resources.each4delay(function(i,content,next){
 		var content = resources[i];
-		if( content == "" ) continue;
+		if( content == "" ) return;
 		var content = root + content;
 		var s = document.createElement(attrs[0]);
 		if( props ){
@@ -12,8 +34,13 @@ function loader(attrTpl,resources,root,props){
 			}
 		}
 		s[attrs[1]] = content;
+		s.onload = function(){
+			next();
+		};
 		document.body.appendChild(s);
-	}
+	},10,false,function(){
+		console.info('loaded');
+	});
 }
 var u = {
 	eval : function(code){
@@ -37,7 +64,7 @@ chrome.extension.sendRequest(
 					fix = location.href.indexOf( matches ) >= 0;
 				}
         		if( fix ){
-        			loader('script.src',resource.scripts,resource.host || yund.host ,{type:'text/javascript'});
+        			loader('script.src',resource.scripts,resource.host || yund.host ,{type:'text/javascript',' charset':'UTF-8'});
 					loader('link.href',resource.stylesheets,resource.host || yund.host ,{type:'text/css','rel':"stylesheet"});
         		}
         	}
