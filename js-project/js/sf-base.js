@@ -809,7 +809,7 @@
 	     }
 	     callback(a);
 	};
-
+	
 	/**
 	 * 定义包
 	 */
@@ -918,6 +918,13 @@
 		}
 		return o;
 	}
+	function objarr2arr(arr,name){
+		var oarr = [];
+		for(var i = 0; i < arr.length; i ++){
+			oarr.push(arr[i][name]||'');
+		}
+		return oarr;
+	}
 	function uuid() {
 		var s = [];
 		var hexDigits = "0123456789abcdef";
@@ -945,32 +952,76 @@
 		}
 		return co;
 	}
+	function toFix(self,plength){
+		var self = (self).toString(),length = self.length;
+		var fix = [self];
+		if( length < plength ){
+			while(fix.join('').length < plength ){
+				fix.push('0');
+			}
+			return fix.reverse().join('');
+		}else if( length > plength ){
+			return self.substring(length-plength);
+		}else{
+			return self;
+		}
+	}
 	function now( format ){
 		var now = new Date();
 		var attrs = {
-				yyyy : 'getFullYear',
-				mm : 'getMonth',
-				dd : 'getDate',
-				hh : 'getHours',
-				MM : 'getMinutes',
-				ss : 'getSeconds',
-				SSS : 'getMilliseconds'
+				yyyy : function(){
+					return this.getFullYear();
+				},
+				mm : function(){
+					return this.getMonth() + 1;
+				},
+				dd : function(){ 
+					return this.getDate();
+				},
+				hh : function(){
+					return this.getHours();
+				},
+				MM : function(){
+					return this.getMinutes();
+				},
+				ss : function(){
+					return this.getSeconds();
+				},
+				SSS : function(){
+					return this.getMilliseconds();
+				},
+				search : function(name){
+					for(var prop in this){
+						if( prop != 'search' && ( prop.indexOf(name) >=0 || name.indexOf(prop) >=0 ) ){
+							return this[prop];
+						}
+					}
+				}
 		};
-		var values = {};
-		for( attr in attrs ){
-			var v = now[attrs[attr]]();
-			values[attr] = v;
+		format = format || "yyyy-mm-dd hh:MM:ss";
+		var re = /([a-zA-Z]+)/img;
+		var s = [],cursor = 0,match= null;
+		while( match = re.exec(format) ){
+			var $1 = match[1];
+			s.push(format.slice(cursor,match.index));
+			var fnName = attrs.search($1);
+			var frmvalue = fnName ? fnName.call(now) : $1;
+			s.push(toFix(frmvalue,$1.length));
+			cursor = match.index + $1.length;
 		}
-		return (format || "{yyyy}-{mm}-{dd+1} {hh}:{MM}:{ss}").format(values);
+		s.push(format.slice(cursor,format.length));
+		return s.join('');
 	}
 	window._ = {
 			objarr2map : objarr2map,
+			objarr2arr : objarr2arr,
 			arr2map : arr2map,
 			map2objarr : map2objarr,
 			map2arr : map2arr,
 			uuid : uuid,
 			copy : copy,
 			now : now,
+			toFix : toFix,
 			$uuid : function(){
 				var uuid = this.uuid();
 				return uuid.replace(/-/g,'');
