@@ -78,7 +78,7 @@
 		},
 		//格式化带点的字符串对象 shop.shopId
 		format_dot_o : function(a,value){
-			var func_reg = /([^\(]+)\(([^\)]+)\)/ig;
+			var func_reg = /^([^\(\:;]+)\(([^\)\:]+)\)/ig;
 			if(func_reg.test(value)){//function
 				var args = RegExp.$2;
 				var func = RegExp.$1;
@@ -154,6 +154,21 @@
 				"&quot;" : /"/img,
 				"&#39;" : /'/img
 			});
+		},
+		//是否包括数组中的字符,包含有一个则为true
+		containsInArray : function(array,el){
+			var contains = false, o = {index:-1,elm:null};
+			var s = this.toLowerCase();
+			for ( var i = 0; i < array.length; i++) {
+				var os = array[i].toLowerCase();
+				contains = contains || s.indexOf(os) >= 0;
+				if( contains ){
+	                o.index = i;
+	                o.elm = array[i];
+					break;
+				}
+			}
+			return o[el] || contains;
 		}
 	});
 	
@@ -966,8 +981,8 @@
 			return self;
 		}
 	}
-	function now( format ){
-		var now = new Date();
+	function dformat( date, format ){
+		var now = date || new Date();
 		var attrs = {
 				yyyy : function(){
 					return this.getFullYear();
@@ -1012,6 +1027,10 @@
 		s.push(format.slice(cursor,format.length));
 		return s.join('');
 	}
+	function now( format ){
+		var now = new Date();
+		return dformat(now);
+	}
 	window._ = {
 			objarr2map : objarr2map,
 			objarr2arr : objarr2arr,
@@ -1021,6 +1040,7 @@
 			uuid : uuid,
 			copy : copy,
 			now : now,
+			dformat : dformat,
 			toFix : toFix,
 			$uuid : function(){
 				var uuid = this.uuid();
