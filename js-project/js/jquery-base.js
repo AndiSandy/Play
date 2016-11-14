@@ -535,5 +535,207 @@
 		}
 		return $(this);
 	};
-		
+
+	//对象化
+	var objectize = function(selectors){
+		selectors = selectors || {};
+		var object = {};
+		var elm = this;
+		for(var name in selectors){
+			var selector = selectors[name];
+			var v = "";
+			if($.isFunction(selector)){
+				v = selector(elm);
+			}else{
+				//$('abc',elm).val();
+				v = eval("({0});".format(selector));
+			}
+			object[name] = v;
+		}
+		return object;
+	};
+	var objectizes = function(selectors){
+		selectors = selectors || {};
+		var list = [];
+		$(this).each(function(i,elm){
+			var object = $(elm).objectize(selectors);
+			list.push(object);
+		});
+		return list;
+	};
+	$.fn.objectize = objectize;
+	$.fn.objectizes = objectizes;
+	
+	//位置 pos{x,y}
+	$.pos2offset = function(pos){
+		if( pos.x != null){
+			return $.extend({},pos,{left:pos.x,top:pos.y});
+		}
+		return pos;
+	}
+	$.offset2pos = function(offset){
+		if( offset.left != null){
+			return $.extend({},offset,{x:offset.left,y:offset.top});
+		}
+		return offset;
+	}
+	$.diff2pos = function(pos1,pos2){
+		return {x:pos1.x-pos2.x,y:pos1.y-pos2.y};
+	}
+	$.plus2pos = function(pos1,pos2){
+		return {x:pos1.x+pos2.x,y:pos1.y+pos2.y};
+	}
+	$.fn.position = function(pos){
+		if( pos ){
+			var offset = $.pos2offset(pos);
+			$(this).css('position','absolute').offset( offset );
+			pos.color && $(this).css('background',pos.color);
+			pos.r && $(this).css('width',pos.r).css('height',pos.r);
+			return $(this);
+		}else{
+			var offset = $(this).offset();
+			return $.offset2pos(offset);
+		}
+	}
+	$.getArgs = function($args){
+		var args = Array.copy($args,0);
+		var arg0 = args[0];
+		if( arg0 instanceof Array){
+			args = arg0;
+		}
+		return args;
+	}
+	$.drawPoint = function(pos,color,r){
+		$('<div style="width:{r}px;height:{r}px;"></div>'.format({r:r||1})).appendTo('body').position(pos).css('background',color);
+	}
+	$.drawPoints = function(){
+		var args = $.getArgs(arguments);
+		var tpl = '<div style="width:1px;height:1px;"></div>';
+		for(var i = 0; i < args.length; i ++){
+			var pos = args[i];
+			$(tpl).appendTo('body').position(pos);
+		}
+	}
+	//拖动
+	$.fn.dragable = function(){
+		var page = {
+            event: function (evt) {
+                var ev = evt || window.event;
+                return ev;
+            },
+            pageX: function (evt) {
+                var e = this.event(evt);
+                return e.pageX || (e.clientX + document.body.scrollLeft - document.body.clientLeft);
+            },
+            pageY: function (evt) {
+                var e = this.event(evt);
+                return e.pageY || (e.clientY + document.body.scrollTop - document.body.clientTop);
+            },
+            layerX: function (evt) {
+                var e = this.event(evt);
+                return e.layerX || e.offsetX;
+            },
+            layerY: function (evt) {
+                var e = this.event(evt);
+                return e.layerY || e.offsetY;
+            }
+        }
+		function releaseEvents(target){
+			target && target.releaseCapture && target.releaseCapture();
+			window.releaseEvents && window.releaseEvents(Event.MOUSEMOVE | Event.MOUSEUP);
+		}
+		function captrueEvents(target){
+			target && target.setCapture && target.setCapture();
+			window.captureEvents && window.captureEvents(Event.MOUSEMOVE | Event.MOUSEUP);
+		}
+		function setup(target,move){
+			var dragid = $(target).attr('dragid');
+			captrueEvents(target);
+			$(document).on('mousemove.drag-'+dragid,function(e){
+				//清除选择
+				window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty();
+				move && move({x:page.pageX(e),y:page.pageY(e)});
+			});
+			$(document).on('mouseup.drag-'+dragid,function(e){
+				takeoff(target);
+			});
+		}
+		function takeoff(target){
+			var dragid = $(target).attr('dragid');
+			releaseEvents(target);
+			$(document).off('mousemove.drag-'+dragid+' mouseup.drag-'+dragid);
+		}
+		$(this).each(function(i,elm){
+			var source = this,target = $(this).attr('target') || source ;
+			var id = _.now('yyyyMMddhhmmssSSS') + i;
+			$(target).attr('dragid',id).data('source',source).css('cursor','move')
+			.mousedown(function(e){
+				var target = this,source = $(target).data('source');
+				var x = page.pageX(e);
+                var y = page.pageY(e);
+                var source_pos1 = $.offset2pos($(source).offset());
+                var source_pos = {x:x,y:y};
+                setup(target,function(target_pos){
+                	
+                	var tx = target_pos.x - source_pos.x;
+	                var ty = target_pos.y - source_pos.y;
+	                var off = $.diff2pos(target_pos,source_pos);
+	                off = $.plus2pos(source_pos1,off);
+	                //$.drawPoint(off,'red',1);
+	                //$.drawPoint(target_pos,'yellow',1);
+
+	                $(source).offset($.pos2offset(off));
+
+                });
+                e.stopPropagation();
+			});
+		});
+	}
+
+
+	//表单控件对象化
+	$.fn.objectalize = function($obj){
+		if( $obj ){
+			for( var name in $obj ){
+				var inputobj = {name:name,value:($obj[name]).toString()};
+				var input = $('[name={name}]'.format(inputobj));
+				if( input.size() > 0 ){
+					if( $(input).is('[type=checkbox]') || $(input).is('[type=radio]') ){
+						$(input).filter('[value={value}]'.format(inputobj)).attr('checked',true);
+					}else{
+						input.val(inputobj.value);
+					}
+				}
+			}
+		}else{
+			var obj = {};
+			var formInputs = this;
+			function put(inputobj){
+				if( inputobj.name ){
+					obj[inputobj.name] = inputobj.value;		
+				}
+			}
+			function remove(inputobj){
+				delete obj[inputobj.name];
+			}
+			$(formInputs).each(function(i,input){
+				var inputobj = $(input).attrs('name','value');
+				if( inputobj.name ){
+					if( obj[inputobj.name] ){
+						if( $(input).is('[type=checkbox]') || $(input).is('[type=radio]') ){
+							remove(inputobj);
+							inputobj = $('[name={name}]:checked'.format(inputobj)).attrs('name','value');
+							put(inputobj);
+						}
+					}else{
+						put(inputobj);
+					}
+				}
+			});
+			return obj;
+		}
+	}
+
+
+
 }());

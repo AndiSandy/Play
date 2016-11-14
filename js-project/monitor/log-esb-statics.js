@@ -17,7 +17,7 @@ $(function(){});
 		env:'prd',
 		start:_.now('yyyy-mm-dd 00:00:00') || '2016-10-05 00:00:00',
 		end:_.now('yyyy-mm-dd 23:59:59') || '2016-10-05 23:59:59',
-		date : _.now('yyyy-mm-dd') || '2016-10-05',
+		date : _.now('yyyy-mm-dd') || '2016-11-07',
 		timeType:'2',
 		setDate : function(date){
 			var dateo = {date:date};
@@ -105,4 +105,4 @@ $(function(){});
 		statics4range : statics4range,
 		write : write	
 	}
-	esb.statics();
+	esb.statics('2016-11-07');

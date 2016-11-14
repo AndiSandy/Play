@@ -813,8 +813,7 @@
 	                 function next(){
 	                 	callback(a);
 	                 };
-	                 f(a.i,a[a.i],next);
-	                 a.i ++;
+	                 f(a.i,a[a.i++],next);
 	                 auto && next();
 	              },t|1000);
 	          }else{
@@ -842,6 +841,20 @@
 		}
 		return pckgs;
 	};
+	var define = function(packages,def){
+		var pckgs = window,pko=null;
+		var pnames = packages.match(/[^\.]+/g);
+		for(var i = 0; i < pnames.length; i++){
+			if(!pckgs[pnames[i]])
+				pckgs[pnames[i]] = {};
+			if( i == pnames.length - 1 ){
+				pckgs[pnames[i]] = def || {};
+			}
+			pckgs = pckgs[pnames[i]];
+		}
+		return def;
+	};
+	window.define = define;
 	window.pckg = pckg;
 	/**
 	 * 扩展jquery方法，取多个属性值，返回一个包含属性值的对象
@@ -1029,9 +1042,19 @@
 	}
 	function now( format ){
 		var now = new Date();
-		return dformat(now);
+		return dformat(now,format);
+	}
+	function $getobj(obj,name){
+		var o = obj[name] = obj[name] || {};
+		return o;
+	}
+	function $getarr(obj,name){
+		var o = obj[name] = obj[name] || [];
+		return o;
 	}
 	window._ = {
+			$getobj : $getobj,
+			$getarr : $getarr,
 			objarr2map : objarr2map,
 			objarr2arr : objarr2arr,
 			arr2map : arr2map,

@@ -11,271 +11,7 @@
 (function($){
 	
 	if(!$) return;
-		
 	
-	$.extend(String,{
-		fill : '...',
-		show : function(s,length){
-			var s = this.toString(s) || '';
-			if(length > 0 && s.length > length){
-				s = s.substring(0,length) + this.fill;
-			}else if(s == null){
-				s = "";
-			}
-			return (''+s).trim();
-		},
-		toString : function(s){
-			return s == null ? '' : ''+s;
-		}
-	});
-
-	$.string = (new function(){
-		this.fill = "..";
-		this.show = function(s,length){
-			var s = this.toString(s) || '';
-			if(length > 0 && s.length > length){
-				s = s.substring(0,length) + this.fill;
-			}else if(s == null){
-				s = "";
-			}
-			return (''+s).trim();
-		};
-		this.toString = function(s){
-			return s == null ? '' : ''+s;
-		};
-	});
-
-	/**
-	 * 微型模板引擎
-	 * example :
-	 * hello qq,lili,hh
-	 * "hello {0},{1},{2}".format('qq','lili','hh') =="hello {0},{1},{2}".format(['qq','lili','hh']);
-	 * "hello {w},{s},{name}".format({w:'qq',s:'lili',name:'hh'});
-	 * "hello {0},{s},{name}".format({w:'qq',s:'lili',name:'hh'});
-	 */
-	$.extend(String.prototype,{
-		wrap : function(tag){
-			return ['<'+tag+'>',this,'</'+tag+'>'].join('');
-		},
-		is : function(s){
-			return this == s;
-		},
-		eq : function(s){
-			return this == s;
-		},
-		//过滤字符
-		filter : function(chars){
-			var s = this;
-			if(chars){
-				for(var key in chars){
-					s = s.replace(chars[key], key);
-				}
-			}
-			return s;
-		},
-		ifNull : function(a,ifNull){
-			return a == null ? ifNull : a;
-		},
-		isEmpty : function(){
-			return this.trim() == "";
-		},
-		//string转化为json
-		json : function(){
-			return this.eval(this);
-		},
-		_eval_ : function(){
-			return this.json();
-		},
-		eval : function(v,scope){
-			try{
-				with(scope || window){
-					return eval("("+v+")");
-				}
-			}catch(e){
-				debug && console.warn && console.warn(e.message);
-				return null;
-			}
-		},
-		//格式化带点的字符串对象 shop.shopId
-		format_dot_o : function(a,value){
-			var func_reg = /([^\(]+)\(([^\)]+)\)/ig;
-			if(func_reg.test(value)){//function
-				var args = RegExp.$2;
-				var func = RegExp.$1;
-				func = this.format_dot_o(a,func) || function(){return func;};
-				args = args.split(',');
-				for(var i =0; i < args.length; i++){
-					args[i] = this.format_dot_o(a,args[i]) || args[i];
-				}
-				//console.info(args +"-"+func);
-				return func.apply(a,args);
-			}else{
-				var expression = value.match(/([^\.]+)/g);//[0-9a-zA-Z_]
-				var v = a[expression[0]];
-				for(var i=1; i < expression.length; i ++){
-					v = v && v[expression[i]];
-				}
-				return this.ifNull(v,"".ifNull(this.eval(value,a),'{'+value+'}'));
-			}
-		},
-		//格式化对象
-		format_o: function(o){
-			var string = this;
-			return this.replace(/\{([^}]+)\}/g,function(index,value){
-				return string.format_dot_o(o,value);
-			});
-		},
-		//格式化数组
-		format_a: function(a){
-			var string = this;
-			return this.replace(/\{([^}]+)\}/g,function(index,value){
-				return string.format_dot_o(a,value);
-			});
-		},
-		//格式化入口
-		format	: function(){
-			var content = this;
-			if(arguments.length > 0){
-				for(var i = 0; i < arguments.length; i++){
-					var o = arguments[i];
-					//console.debug('format');
-					if($.isArray(o)){//array
-						//console.debug("//array");
-						content = content.format_a(o);
-					}else if( typeof o == 'object'){//plain object $.isPlainObject(o)
-						//console.debug("//plain object");
-						content = content.format_o(o);
-					}else{//arguments
-						//console.debug("//arguments");
-						var a = [].slice.apply(arguments, [0, arguments.length]);
-						content = content.format_a(a);
-					}
-				}
-				return content;
-			}else{
-				return this;
-			}
-		},
-		//去前后空格
-		trim : function(){
-			return this.replace(/^\s*|\s*$/img,'');
-		},
-		html : function(){
-			return this.filter({
-				"&amp;" : /&/img,
-				"&lt;" : /</img,
-				"&gt;" : />/img,
-				"&nbsp;" : / /img,
-				"&quot;" : /"/img,
-				"&#39;" : /'/img
-			});
-		}
-	});
-	
-	$.helper = (new function(){
-		//var img_regex = //img;
-		this.tableKey = function(num){
-			var table = "\t";
-			var s = "";
-			for(var i = 0; i < num; i ++){
-				s += table;
-			}
-			return s;
-		};
-		this.toString = function(config,level){
-			var level = level || 0;
-			var tableKey = this.tableKey(level);
-			if(config){
-				var s = "";
-				for(var attr in config){
-					var cv = config[attr];
-					
-					var isobj = false;
-					try{
-						isobj = $.isPlainObject(cv);
-					}catch(e){
-						
-					}
-					if(isobj){
-						s += tableKey + attr + "\n" +this.toString(cv,level + 1);
-					}else if($.isArray(cv)){
-						var sa = attr + "=[";
-						for(var i = 0; i < cv.length; i ++){
-							var ca = cv[i];
-							if( $.isPlainObject(ca)){
-								s += "\n"+tableKey +this.toString(ca,level + 1);
-							}else if($.isArray(ca)){
-								s += "\n"+tableKey +this.toString(ca,level + 1);
-							}else if($.isFunction(ca)){
-								sa += i + "=[function],";	
-							}else{
-								sa += i + "="+ca+",";
-							}
-						}
-						sa += "];\n";
-						s += tableKey + sa;
-					}else if($.isFunction(cv)){
-						s += tableKey + attr + "=[function];\n";		
-					}else{
-						s += tableKey + attr + "=" + cv + ";\n";
-					}
-				}
-				return s;
-			}
-		};
-		this.random = function(max){
-			var max = max || 0;
-			var timesmap = new Date().getTime();
-			var seed = Math.random() * timesmap;
-			var r = max > 0 ? seed % max : seed;
-			r = window.parseInt(r);
-			return r;
-		};
-	});
-
-	$.extend(Array.prototype,{
-		equals	: function(a,b){
-			return a == (b);
-		},
-		indexOf : function(a,f){
-			for(var i =0; i < this.length; i ++){
-				if((f||this.equals)(a,this[i])){
-					return i;
-				}
-			}
-			return -1;
-		},
-		filter : function(a,f,arr,max){
-			var l = arr || [];
-			max = max || Number.MAX_VALUE;
-			for(var i =0; i < this.length; i ++){
-				if((f||this.True)(a,this[i]) && l.length <  max){
-					l.push(this[i]);
-				}
-			}
-			return l;
-		},
-		random : function(){
-			var length = this.length;
-			var index = $.helper.random(length);
-			return this[index];
-		},
-		True : function(){
-			return true;
-		},
-		remove : function(iOro,f){
-			var at = -1;
-			if($.isPlainObject(iOro)){
-				at = this.indexOf(iOro,f);
-			}else if($.isNumeric(iOro)){
-				at = iOro;
-			} 
-			if(at >=0){
-				this.splice(at,1);
-			}
-		}
-	});
-
 	//setting to string
 	var o2s = function(s){
 		var ss = [];
@@ -316,7 +52,7 @@
 				}
 				this[apiName] = function(text){
 					var args = [].slice.apply(arguments,[1, arguments.length]);
-					var time = new Date().f();
+					var time = _.now();
 					var log_text = "["+time+"]["+log.package+"]	"+$.string.show(text).format.apply(text,args);//[]
 					var func = arguments.callee.api;
 					try{
@@ -332,7 +68,7 @@
 		},
 		loge : function(text){
 			var args = [].slice.apply(arguments,[1, arguments.length]);
-			var time = new Date().f();
+			var time = _.now();
 			var log_text = "["+time+"]["+log.package+"]	"+$.string.show(text).format.apply(text,args);//[]
 			this.logFile.push({date:time,text:log_text});
 		}
@@ -346,45 +82,23 @@
 	$.isNumeric = function(obj){
 		return !isNaN( parseFloat(obj) ) && isFinite( obj );
 	};
-	
-	/*-----------------------
-	 * request请求对象
-	 -----------------------*/
-	$.request = ( new function(){
-		var console = window.console || {};
-		console.info = console.info || function(a){
-			alert(a);
-		};
-		this.parameters = {};
-		this.init = function(search){
-			var search = search || '';
-			if(search.indexOf('?') == 0){
-				search = search.substring(1);
+	$.string = (new function(){
+		this.fill = "..";
+		this.show = function(s,length){
+			var s = this.toString(s) || '';
+			if(length > 0 && s.length > length){
+				s = s.substring(0,length) + this.fill;
+			}else if(s == null){
+				s = "";
 			}
-			var pa = search.split("&");
-			for(var i = 0; i < pa.length; i ++){
-				var kv = pa[i].split("=");
-				this.parameters[kv[0]||''] = kv[1]||'';
-			}
+			return (''+s).trim();
 		};
-		this.parameters = {};
-		this.get = function(name){
-			return this.parameters[name || ''] || '' ;
+		this.toString = function(s){
+			return s == null ? '' : ''+s;
 		};
-		this.toString = function(){
-			var string = "";
-			for(var a in this.parameters){
-				string += a + "-" + this.parameters[a] + "\n";
-			}
-			console.info(string);
-		};
-		var search = location.search.substring(1);
-		this.init(search);
 	});
 	
-	window.debug = !!$.request.get('debug');
-  	
-  	/*-----------------------
+	/*-----------------------
 	 * 日期格式化d.f("yyy-MM-dd hh:mm:ss:SS EEE")
 	 -----------------------*/
   	var rs = [
@@ -491,79 +205,6 @@
   	});
   	$.extend(Date,d_static_impl);
   	$.date = Date;
-  	
-  	
-  	$.cookie = function(){
-  		var d= document;
-  		var cookies = d.cookie.split("; ");
-  		
-  		var date = new Date();
-  		var expiresFun = "toGMTString";
-  		//default options
-  		var o = {
-  				expires :	'',
-  				path	:	'/',
-  				domain	:	location.hostname,
-  				secure	:	false
-  		};
-  		
-  		//setting to string
-  		var o2s = function(s){
-  			var ss = [];
-  			for(var n in s){
-  				ss.push(n + "=" + s[n]);
-  			}
-  			return ss.join("; ");
-  		};
-  		
-  		//set
-  		var s = function(n,v,ss){
-  			var set = {};
-  			set[n] = escape(v);
-  			set = $.extend(set,ss||{});
-  				
-  			if(set && set.expires){
-  				date.setTime(date.getTime() + set.expires );
-  				set.expires = date[expiresFun]();
-  			}
-  			
-  			console.info(o2s(set));
-  			document.cookie = o2s(set);
-  		};
-  		//get
-  		var g = function(n){
-  			var find = false;
-  			var v = null;
-  			for(var i=0; i < cookies.length; i ++){
-  				cookie = cookies[i].split("=");
-  				var cn = cookie[0] || "";
-  				var cv = cookie[1] || "";
-  				if(cn == n){
-  					if(!find){
-  						v = unescape(cv);
-  					} 
-  					find = true;
-  					console.info("get cookie:"+cn+"="+unescape(cv));
-  				}
-  			}
-  			return v;
-  		};
-  		//del
-  		var d = function(n,ss){
-  			//date.setTime(date.getTime() - 10000 );
-  			//document.cookie = n + "=; expires=" + date[expiresFun]();
-  			s(n,null,$.extend({expires:-10000},ss||{}));
-  		};
-  		//list
-  		var l = function(){
-  			console.info(">>===========================");
-  			$.each(cookies,function(i,cookie){
-  				console.info(i+".	"+unescape(cookie));
-  			});
-  			console.info("<<===========================");
-  		};
-  		return $.extend(this,{s:s,g:g,d:d,l:l});
-  	};
   	
   	//定时器
   	var timmer = function(){
@@ -969,157 +610,10 @@
   	
   	spring.timer.deamon.run();
 
-  	$.jsonp = function(url,data,callback,callname,method){
-		var post = {
-			type: method||"POST",
-			url: url,
-			cache : false,
-			async : false,
-			data : data,
-			dataType : "jsonp",
-			jsonp : "callback",
-			jsonpCallback : callname,
-			success: callback
-		};
-		$.ajax(post);
-	}
-
-	/* ----------================extend=============--------------*/
-	/**
-	 * map转数组
-	 */
-	function map2arr(o,k,v){
-		var arr = [];
-		for(var name in o){
-			var oo = null;
-			if( k && v ){
-				oo = {};
-				oo[k] = name;
-				oo[v] = o[name];
-			}else{
-				oo = o[name];
-			}
-			arr.push(oo);
-		}
-		return arr;
-	}
-	function map2objarr(o){
-		var arr = [];
-		for(var name in o){
-			var oo = {};
-			oo[name] = o[name];
-			arr.push(oo);
-		}
-		return arr;
-	}
-	/**
-	 * 数组转map
-	 */
-	function arr2map(arr,k,v){
-		var o = {};
-		for(var i = 0; i < arr.length; i ++){
-			if( k && v ){
-				o[arr[i][k]] = arr[i][v];
-			}else{
-				o[arr[i][k]] = arr[i];
-			}
-		}
-		return o;
-	}
-	function objarr2map(arr){
-		var o = {};
-		for(var i = 0; i < arr.length; i ++){
-			for(var attr in arr[i]){
-				o[attr] = arr[i][attr];
-			}
-		}
-		return o;
-	}
-	function cache(name,value){
-		//init
-		var cacheObj = {};
-		if( window.localStorage.cacheObj ){
-			cacheObj = JSON.parse( window.localStorage.cacheObj );
-		}
-		if( value != null ){
-			cacheObj[name] = value;
-			window.localStorage.cacheObj = JSON.stringify(cacheObj);
-		}else{
-			return cacheObj[name];
-		}
-	}
-	window._ = {
-			objarr2map : objarr2map,
-			arr2map : arr2map,
-			map2objarr : map2objarr,
-			map2arr : map2arr,
-			cache : cache
-	};
-
-	//打卡
-  	function sign(){
-  		var url = "http://vip.suning.com/sign/doSign.do";
-  		var d = new Date;
-  		var csrftoken = $.cookie().g('CSRF-TOKEN');
-  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime(),'X-CSRF-TOKEN':csrftoken},function(data){
-			if( data.succ ){
-				//success
-				var content = "[{f()}]<br/>打卡成功{prizeName}-{finalPrizeQty}-{beatRatioTip}".format(data,d);
-				print(content);
-			}else{
-				var content = "[{f()}]<br/>打卡失败{errorCode}".format(data,d);
-				print(content);
-				if( data.errorCode=='err.minosRequireVCS' ){
-					DialogShow.graphicalDialog('minos');	
-				}
-			}
-		},'lotteryDrawCallback','GET');
-  	}
-  	function print(msg){
-  		var consoleEl = $('[console]');
-  		var msgTpl = '<span class="label-info msg">{0}</span>'.format(msg);
-  		consoleEl.append(msgTpl);
-		consoleEl.scrollTop(consoleEl.scrollTop()+10000)
-  	}
-	function deamon(time){
-		var url = "http://vip.suning.com/sign/welcome.do?live=true";
-		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
-		var ifEl = $(iframeHtml);
-		$(document.body).append(ifEl);
-		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<a href="javascript:daka.sign();">手动打卡</a></span></div>';
-		$(document.body).append(consoleEl);
-		setInterval(function(){
-			console.clear();
-			console.info(Date.f(),'will living now!!!');
-			try{
-				ifEl[0].contentWindow.location.reload();	
-			}catch(e){
-				console.info(Date.f(),'离线异常，正在重新载入');
-				ifEl[0].src = url;
-			}
-		},time||50000);
-	}
-	var live = $.request.get('live') == 'true';
-	if( !live ){
-		//定时打卡
-		var yund_config = _.cache("yund_config") || {};
-		var time_el = yund_config.sign_time_el || '* 50 8 * * *';
-		spring.timer.add({name:'qp',cronExpression:time_el,job:function(){
-				sign();
-				console.info('sign...');
-			}
-		});
-
-		var liveTime = yund_config.liveTime;
-		$('[name=deamon]').remove();
-		deamon(liveTime);
-	}
-	window.daka = {
-		sign : sign,
-		print : print,
-		deamon : deamon
-	};
+	//每天凌晨3点运行一次
 	
-	
+	//spring.timer.add({name:'qp',cronExpression:'*/3 * * * * *',job:function(){
+	//		console.info('hello');
+	//	}
+	//});
 }(jQuery));
-

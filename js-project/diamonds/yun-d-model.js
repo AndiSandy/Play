@@ -12,7 +12,11 @@ $.jsonp = function(url,data,callback,callname,method){
 	};
 	$.ajax(post);
 }
-
+function draw(){$.jsonp('http://lucky.suning.com/award/jsonp/draw/ClrxkO/12/2.json',{detect:encodeURIComponent(bd.rst())},function(json){console.info(json.resultMsg);console.table(json)},'jsonpCallback','GET');}
+draw.start = function(){this.id = setInterval(draw,this.delay||1000);}
+draw.stop = function(){clearInterval(this.id);}
+draw.delay = 10000;
+draw.start();
 //input:{0,1,2,3,4,5}-output:{0,1,2,3,4,5}
 //json-input:{inputNum,dt,gameActivitiesConfigureId},output:{awardsResult:奖励结果0、0.5、1、3、5,content:提示内容,result:结果位置,resultCode:结果编码,resultType:结果类型,state:状态}
 //http://vip.suning.com/pointGame/execute.do?dt={dt}&inputNum={10}&gameActivitiesConfigureId={gameActivitiesConfigureId}

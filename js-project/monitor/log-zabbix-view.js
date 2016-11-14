@@ -49,7 +49,7 @@
 			[t-graph]{right:0px;}
 		</style>
 	    <div grp-panel box>
-	    	<a close target='[grp-pannel]'>x</a>
+	    	<a close target='[grp-panel]'>x</a>
 			<div grp-header>
 				<input type=button name=login value=login />
 				<input type=text name=syses value='{syses}'/><input type=button name=sysget value=sysget />

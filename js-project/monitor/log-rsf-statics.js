@@ -8,7 +8,7 @@ $(function(){});
 	];
 	window.rsf_services = rsf_services;
 	window.config = {
-		date : _.now('yyyy-mm-dd') || '2016-10-05',
+		date : _.now('yyyy-mm-dd') || '2016-11-07',
 		setDate : function(date){
 			this.date = date;
 		}
@@ -137,7 +137,7 @@ $(function(){});
 	
 	loadrsf(function(){
 		searchService(function(){
-			rsf.statics();
+			rsf.statics('2016-11-07');
 		});	
 	});
 	
