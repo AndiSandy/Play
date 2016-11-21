@@ -7,7 +7,7 @@
         "page": "bg.html"
     },
     "minimum_chrome_version": "18",
-    "permissions": ["http://*.suning.com/*", "https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*" , 
+    "permissions": ["http://*.suning.com/*", "https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*" , "https://*.cnsuning.com/*","http://*/*","https://*/*",
         "notifications",
     	"tabs",    
 		"bookmarks", 
@@ -31,7 +31,7 @@
 	},
     "content_scripts": [{
         "js": ["lib/jquery-1.11.1.min.js","lib/base.js","js/test.js"],
-        "matches": ["http://*.suning.com/*","https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*" ],
+        "matches": ["http://*.suning.com/*","https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*","http://*/*","https://*/*" ],
         "run_at": "document_end"
     }],
     "web_accessible_resources": ["images/*.png","images/*.gif","js/*.js","ftl/*.ftl"],

@@ -466,12 +466,12 @@
 	$.fn.refresh = function(data,tpl){
 		if($(this).size()>1){
 			$(this).each(function(i,elm){
-				data && $(this).data("data",data);
+				data && $(this).data("data",$.extend({},data));
 				tpl && $(this).data("tpl",tpl.compile());
 				$(this).sara();	
 			});
 		}else{
-			data && $(this).data("data",data);
+			data && $(this).data("data",$.extend({},data));
 			tpl && $(this).data("tpl",tpl.compile());
 			$(this).sara();	
 		}
@@ -815,7 +815,7 @@
 	                 };
 	                 f(a.i,a[a.i++],next);
 	                 auto && next();
-	              },t|1000);
+	              },t||1000);
 	          }else{
 	             clearTimeout(a.tid);
 	             end && end(a);
@@ -1052,7 +1052,7 @@
 		var o = obj[name] = obj[name] || [];
 		return o;
 	}
-	window._ = {
+	window._ = $.extend(window._||{},{
 			$getobj : $getobj,
 			$getarr : $getarr,
 			objarr2map : objarr2map,
@@ -1069,7 +1069,7 @@
 				var uuid = this.uuid();
 				return uuid.replace(/-/g,'');
 			}
-	};
+	});
 	
 	/*---===========aop==============---*/
 	Function.prototype.before = function( func ){

@@ -64,6 +64,7 @@
 				<input type=button name=initialize value=initialize />
 				<input type=button name=report value=report />
 				<input type=button name=find value=find />
+				<input type=button name=start value=start />
 			</div>
 			<div grp-body>
 				<div grp-p taskarr tpl=taskarr>taskarr</div>
@@ -141,8 +142,9 @@
 			minute : 45
 		};
 		var service_config = {
-			'search.url' : 'http://itsm.cnsuning.com/traffic-web-in/selftask/loadSelfTaskDetailList.htm',
-			'report.url' : 'http://itsm.cnsuning.com/traffic-web-in/selftask/selfSystemReport.htm'
+			'sys.search.url' : 'http://itsm.cnsuning.com/traffic-web-in/selftask/loadSelfTaskDetailList.htm',
+			'sys.report.url' : 'http://itsm.cnsuning.com/traffic-web-in/selftask/selfSystemReport.htm',
+			'task.search.url' : 'http://itsm.cnsuning.com/traffic-web-in/selftask/loadSelfTaskList.htm?&searchValue={keyword}'
 		};
 		function updateconfig(config){
 			if(config){
@@ -155,11 +157,11 @@
 		function log(level){
 			var args = Array.copy(arguments,1);
 			var msg = args.join(',');
-			var log = {level:level,msg:msg,now:_.now()};
+			var _log = {level:level,msg:msg,now:_.now()};
 			if( public.logarr.length > 150 ){
 				public.logarr.shift();
 			}
-			public.logarr.push(log);
+			public.logarr.push(_log);
 			$('[console]').refresh(public);
 			$('[console]')[0].scrollTop = 99999999999999999999;
 			console[level].apply(console,args);
@@ -190,7 +192,7 @@
 				searchValue : sysname||'',//关键字
 				currentPage : '0'
 			};
-			var url = service_config['search.url'];
+			var url = service_config['sys.search.url'];
 			$.gget(url,params,function(html){
 				var sysobj = find(html,sysname);
 				success && success(sysobj);
@@ -215,7 +217,7 @@
 				sctdDes : '',
 				sctdTaskid: taskid||public.taskid || ''//任务id
 			};
-			var url = service_config['report.url'];
+			var url = service_config['sys.report.url'];
 			$.ppost(url,params,function(json){
 				// success
 				if(json.result){
@@ -261,6 +263,31 @@
 				}
 			});
 		}
+		function find_task(html){
+			var task_exp = {
+  				taskid : "$('td:eq(0) .vmid',elm).val()",
+  				taskname : "$('td:eq(1)',elm).text().trim()",
+  				status : "$('td:eq(2)',elm).text().trim()",
+  				crperson : "$('td:eq(3)',elm).text().trim()",
+  				crtime : "$('td:eq(4)',elm).text().trim()"
+  			};
+  			var taskarr = $('.wai-tb-body table tr',html).objectizes(task_exp);
+  			return taskarr;
+		}
+		function search_task(date,success){
+			var params = {
+				keyword : date || _.now('mm月dd号')
+			};
+			var url = service_config['task.search.url'].format(params);
+			$.ppost(url,null,function(html){
+				var taskarr = find_task(html);
+				success && success(taskarr);
+				!taskarr.length && log('info','未找到任务'); 
+			},function(){
+				// error
+				log('error','查找任务异常');
+			},'html');
+		}
 		function initialize(taskid,success){
 			public.sysarr = [],public.sysmap={};
 			public.taskid = taskid || $('[name=taskid]').val();
@@ -284,6 +311,32 @@
 				success && success();
 			});
 		}
+		function auto_report(){
+			spring.timer.add({name:'auto-report-task',cronExpression:'* */1 * * * *',job:function(){
+					itsm.report.search_task(null,function(taskarr){
+						var taskarr_ing = _.filter(taskarr,function(task){
+							return task.status == '进行中';
+						});
+						log('info','找到',taskarr.length,"个任务");
+						log('info','找到',taskarr_ing.length,"个进行中的任务");
+						for( var i = 0; i < taskarr_ing.length; i ++){
+							var task = taskarr_ing[i];
+							initialize(task.taskid,function(){
+								var idarr = _.objarr2arr(itsm.report.sysarr,'id') || [];
+								if( idarr.length > 0 ){
+									var ids = _.objarr2arr(itsm.report.sysarr,'id').join(',');
+									itsm.report.report(ids,taskid);
+									log('info','上报完毕');
+								}else{
+									log('warn','请先初始化环境哦');
+								}
+							})
+						}
+					});
+				}
+			});
+			
+		}
 		var proto = {
 			initialize : initialize,
 			findAselect : findAselect,
@@ -293,7 +346,9 @@
 			addtask : addtask,
 			log : log,
 			flushStatus : flushStatus,
-			updateconfig : updateconfig
+			updateconfig : updateconfig,
+			search_task : search_task,
+			auto_report : auto_report
 		};
 		return $.extend(public,proto);
 	}());
@@ -318,6 +373,8 @@
 	$(function(){
 				
 		$(document.body).append(tmpl.format(itsm.report));
+
+		var log = itsm.report.log;
 
 		itsm.report.log('info','自动上报咯');
 		//关闭
@@ -372,6 +429,12 @@
 				itsm.report.log('warn','请先初始化环境');
 			}
 		});
+
+		//开始自动探测当日上报任务并自动上报
+		$(document).on('click','[name=start]',function(){
+			itsm.report.auto_report();
+		});
+		
 		//添加任务
 		$(document).on('click','[name=addtask]',function(){
 			var task = gettask();

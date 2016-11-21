@@ -585,10 +585,11 @@
 	$.plus2pos = function(pos1,pos2){
 		return {x:pos1.x+pos2.x,y:pos1.y+pos2.y};
 	}
-	$.fn.position = function(pos){
+	$.fn.position = function(pos,fixed){
 		if( pos ){
+			var position = fixed == null || fixed == false ? 'absolute' : 'fixed';
 			var offset = $.pos2offset(pos);
-			$(this).css('position','absolute').offset( offset );
+			$(this).css('position',position).css( offset );
 			pos.color && $(this).css('background',pos.color);
 			pos.r && $(this).css('width',pos.r).css('height',pos.r);
 			return $(this);
@@ -605,12 +606,15 @@
 		}
 		return args;
 	}
-	$.drawPoint = function(pos,color,r){
-		$('<div style="width:{r}px;height:{r}px;"></div>'.format({r:r||1})).appendTo('body').position(pos).css('background',color);
+	$.drawPoint = function(pos,color,r,fixed,id,no){
+		var op = {r:r||1,id:id||'sample-p',no:no||(id?'0':_.$uuid())};
+		var point = $($('[{id}][{id}-{no}]'.format(op,pos))[0] || $('<div point {id} {id}-{no} style="width:{r}px;height:{r}px;z-index:9999"></div>'.format(op,pos)).appendTo('body'));
+		point.position(pos,fixed).css('background',color);
+		return point;
 	}
 	$.drawPoints = function(){
 		var args = $.getArgs(arguments);
-		var tpl = '<div style="width:1px;height:1px;"></div>';
+		var tpl = '<div point style="width:1px;height:1px;"></div>';
 		for(var i = 0; i < args.length; i ++){
 			var pos = args[i];
 			$(tpl).appendTo('body').position(pos);
