@@ -1058,14 +1058,35 @@
 
 	//打卡
   	function sign(){
-  		var url = "http://vip.suning.com/sign/doSign.do";
+  		var url = "http://sign.suning.com/sign/doSign.do";//http://vip.suning.com/sign/doSign.do
   		var d = new Date;
-  		var csrftoken = $.cookie().g('CSRF-TOKEN');
-  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime(),'X-CSRF-TOKEN':csrftoken},function(data){
+  		//{"succ":true,"originalPrizeQty":3,"bonusRuleCode":"BR00005-3","finalPrizeQty":6,"prizeCatg":1,"slotNo":11,"bonusRuleValue":3,"signInRow":1,"signDate":"20161124","bonusRuleTip":"尊享V3福利","isFullSign":false,"bonusRuleOper":"+","prizeName":"云钻","triggerBonusRule":true}
+  		//{signInRow:连续打卡,beatRatioTip:击败提示}
+  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime()},function(data){
 			if( data.succ ){
 				//success
-				var content = "[{f()}]<br/>打卡成功{prizeName}-{finalPrizeQty}-{beatRatioTip}".format(data,d);
+				var content = "[{f()}]<br/>打卡成功{finalPrizeQty}{prizeName}-{bonusRuleCode}-{slotNo}".format(data,d);
 				print(content);
+				var e = Constant.promotionMerchandiseListSize,j=data;
+				if (j.prizeCatg == 1) {
+					/*
+					DialogShow.diamondDialog(j.originalPrizeQty, j.bonusRuleOper, j.bonusRuleValue, j.bonusRuleTip, j.finalPrizeQty, e, j.beatRatioTip);
+					setTimeout(function(){
+						$('.n-close').click();
+					},3000)*/
+				}else if (j.prizeCatg == 2) {
+                    DialogShow.couponDialog(j.prizeName)
+                } else {
+                    if (j.prizeCatg == 3) {
+                        DialogShow.virtualDialog(j.prizeName, j.finalPrizeQty, j.signDate)
+                    } else {
+                        if (j.prizeCatg == 4) {
+                            DialogShow.physicalDialog(j.prizeName, j.signDate)
+                        } else {
+                            DialogShow.thanksDialog()
+                        }
+                    }
+                }
 			}else{
 				var content = "[{f()}]<br/>打卡失败{errorCode}".format(data,d);
 				print(content);

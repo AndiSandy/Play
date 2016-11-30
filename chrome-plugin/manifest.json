@@ -30,7 +30,7 @@
 	    "default_popup": "popup.html"        // 可选
 	},
     "content_scripts": [{
-        "js": ["lib/jquery-1.11.1.min.js","lib/base.js","js/test.js"],
+        "js": ["lib/base.m.js","js/test.js"],
         "matches": ["http://*.suning.com/*","https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*","http://*/*","https://*/*" ],
         "run_at": "document_end"
     }],

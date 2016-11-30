@@ -30,10 +30,13 @@ function loader(attrTpl,resources,root,props){
 		var s = document.createElement(attrs[0]);
 		if( props ){
 			for(var prop in props){
-				s[prop] = props[prop];
+				var value = props[prop];
+				s.setAttribute(prop,value);
+				//s[prop] = props[prop];
 			}
 		}
-		s[attrs[1]] = content;
+		s.setAttribute(attrs[1],content);
+		//s[attrs[1]] = content;
 		s.onload = function(){
 			next();
 		};
@@ -64,8 +67,11 @@ chrome.extension.sendRequest(
 					fix = location.href.indexOf( matches ) >= 0;
 				}
         		if( fix ){
-        			loader('script.src',resource.scripts,resource.host || yund.host ,{type:'text/javascript',' charset':'UTF-8'});
+        			loader('script.src',resource.scripts,resource.host || yund.host ,{type:'text/javascript','charset':'UTF-8'});
 					loader('link.href',resource.stylesheets,resource.host || yund.host ,{type:'text/css','rel':"stylesheet"});
+        			setTimeout(function(){
+        				console.info('hello chrome');
+        			},1000);
         		}
         	}
         }
@@ -77,7 +83,11 @@ chrome.extension.sendRequest(
     function(response) {
         if (response.yund_config) {
         	var yund_config = response.yund_config;
-        	_.cache("yund_config",yund_config);
+        	try{
+        		_.cache("yund_config",yund_config);	
+        	}catch(e){
+        		console.warn(e);
+        	}
         }
     }
 );

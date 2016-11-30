@@ -205,50 +205,45 @@
 		}
 		function draw4ss(ss){
 			var ang = -ss2ang(ss);
-			paint.circle.drawLine(center,ssr,ang,'ss');
+			paint.circle.drawLine(center,ssr,ang,'ss','red',2);
 		}
-		function draw4mm(mm){
+		function draw4mm(mm,ss){
+			mm = mm + parseFloat(ss/60)
 			var ang = -mm2ang(mm);
-			paint.circle.drawLine(center,mmr,ang,'mm');
+			paint.circle.drawLine(center,mmr,ang,'mm','green',2);
 		}
 		function draw4hh(hh,mm){
 			mm = mm || 0;
-			hh = hh + parseFloat(mm/60)
+			hh = hh + parseFloat(mm/60);
 			var ang = -hh2ang(hh);
-			paint.circle.drawLine(center,hhr,ang,'hh');
+			paint.circle.drawLine(center,hhr,ang,'hh','#8A2BE2',2);
 		}
 		function drawCircle(){
 			paint.brush.drawPoint(center,'green',5,true,'clock-center');
-			paint.brush.drawCircle( center ,r,'clock');
+			paint.brush.drawCircle( center ,r,'clock','#7CFC00',2);
 		}
 		function drawScale(){
 			// draw hour scale
 			(12).each(function(i){
 				var ang = -hh2ang(i);
 				var start = paint.circle.pfn(center,ang,190);
-				paint.circle.drawLine(start,15,ang,'hh-scale'+i);
+				paint.circle.drawLine(start,15,ang,'hh-scale'+i,'black',2);
 			});
 			// draw mm scale
 			(60).each(function(i){
 				var ang = -mm2ang(i);
 				var start = paint.circle.pfn(center,ang,198);
-				paint.circle.drawLine(start,5,ang,'mm-scale'+i);
+				paint.circle.drawLine(start,5,ang,'mm-scale'+i,'#38f',2);
 			});
 		}
 		function draw(){
 			draw4ss(public.ss);
-			draw4mm(public.mm);
+			draw4mm(public.mm,public.ss);
 			draw4hh(public.hh,public.mm);
 		}
 		function run(){
 			public.clock = setInterval(function(){
-				var mm = parseInt(++public.ss/60);
-				public.ss = public.ss % 60;
-				public.mm = public.mm + mm;
-				hh = parseInt(public.mm/60);
-				public.mm = public.mm % 60;
-				public.hh = public.hh + hh;
-				public.hh = public.hh % 12;
+				now();
 				draw();
 			},1000);
 		}
@@ -263,6 +258,7 @@
 			public.ss = ss;
 			public.mm = mm;
 			public.hh = hh;
+			public.hh = public.hh % 12;
 		}
 		function initialize(){
 			drawCircle();
