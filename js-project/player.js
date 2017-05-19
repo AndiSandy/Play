@@ -404,7 +404,7 @@
 			var inputNumValue= cost || this.cost;
 			var activitId=$("#gameActivitiesConfigureId").val();
 			this.activitId = activitId;
-			return 'http://vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
+			return '//vip.suning.com/pointGame/execute.do?dt=' + encodeURIComponent(bd.rst())+ '&inputNum=' +inputNumValue + '&gameActivitiesConfigureId=' + activitId;
 		},
 		alearn : autoLearning,
 		listeners : [],
@@ -493,7 +493,7 @@
 		},
 		queryTotal : function(callback){
 			var that = this;
-			var url = "http://vip.suning.com/ajax/user/getPoint.do";
+			var url = "//vip.suning.com/ajax/user/getPoint.do";
 			$.jsonp(url,{'_' : (new Date()).getTime()},function(data){
 				callback.apply(that,[data.totalPoint]);
 			},'callbackFun','GET');

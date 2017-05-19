@@ -61,14 +61,15 @@ $(function(){});
 	function query(service,next){
 		function static4rsf(invokeList){
 			//总量,耗时，成功，失败
-			var total = 0,cost = 0,success=0,fail=0;
+			var total = 0,cost = 0,success=0,fail=0,max=0;
 			invokeList.filter(function(invoke,i){
 				total += invoke.totalInvokeCount;
+				max = Math.max(max,invoke.totalInvokeCount);
 				cost += invoke.totalInvokeCostTime;
 				success += invoke.successInvokeCount;
 				fail += (invoke.totalInvokeCount - invoke.successInvokeCount);
 			});
-			return {total:total,success:success,fail:fail,avg: success == 0 ? 0 : parseInt(cost/success)};
+			return {total:total,success:success,fail:fail,max:max,avg: success == 0 ? 0 : parseInt(cost/success)};
 		}
 		var url = "http://{host}/statistic/searchStatisticByDay.do".format(location);
 		var data = $.extend({},service.rsf,config);
@@ -82,7 +83,7 @@ $(function(){});
 		dates = dates || [config.date];
 		services = services || rsf_services;
 		var tpl4tr1 = '<td colspan="4">{code}<br/>{name}</td>';
-		var tpl4tr2 = '<td>{total}</td><td>{success}</td><td>{fail}</td><td>{avg}</td>';
+		var tpl4tr2 = '<td>{total}</td><td>{success}</td><td>{fail}</td><td>{max}</td>';
 		var tr1 = [];
 		var trs = [];
 		tr1.push('<td>接口<br/>统计日期</td>');
@@ -137,7 +138,7 @@ $(function(){});
 	
 	loadrsf(function(){
 		searchService(function(){
-			rsf.statics('2016-11-07');
+			rsf.statics('2017-01-01');
 		});	
 	});
 	

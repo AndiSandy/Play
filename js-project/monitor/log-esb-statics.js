@@ -18,7 +18,7 @@ $(function(){});
 		start:_.now('yyyy-mm-dd 00:00:00') || '2016-10-05 00:00:00',
 		end:_.now('yyyy-mm-dd 23:59:59') || '2016-10-05 23:59:59',
 		date : _.now('yyyy-mm-dd') || '2016-11-07',
-		timeType:'2',
+		timeType:'1',
 		setDate : function(date){
 			var dateo = {date:date};
 			$.extend(this,{
@@ -29,10 +29,21 @@ $(function(){});
 		},
 		list : []
 	};
+	function calculate(rawData){
+		var esbo = {total:0,success:0,max:0};
+		$(rawData).each(function(i,data){
+			esbo.total += data.transTotalNum;
+			esbo.success += data.successNum;
+			esbo.max = Math.max(esbo.max,data.transTotalNum);
+		});
+		esbo.fail = esbo.total - esbo.success;
+		return esbo;
+	}
 	function query(service,next){
 		var url = "http://myesb.cnsuning.com/esbauto-web-in/statistic/loadStatisticData.htm"
 		var data = $.extend({serviceCode: service.code},config);
 		$.post(url,data,function(json){
+			/*
 			//timeSeries
 			var time_so = _.arr2map(json.timeSeries,'name','data');
 			//服务方平均处理时间
@@ -44,6 +55,10 @@ $(function(){});
 			esbo.total = invoke_so["调用总量"][0];
 			esbo.fail = invoke_so["失败量"][0];
 			esbo.success = esbo.total - esbo.fail;
+			*/
+			// rawData[{successNum,transTotalNum}]
+			var rawData = json.rawData || [];
+			var esbo = calculate(rawData);
 			service[config.date] = esbo;
 			next();
 		},'json');	
@@ -53,7 +68,7 @@ $(function(){});
 		dates = dates || [config.date];
 		services = services || esb_services;
 		var tpl4tr1 = '<td colspan="4">{code}<br/>{name}</td>';
-		var tpl4tr2 = '<td>{total}</td><td>{success}</td><td>{fail}</td><td>{avg}</td>';
+		var tpl4tr2 = '<td>{total}</td><td>{success}</td><td>{fail}</td><td>{max}</td>';
 		var tr1 = [];
 		var trs = [];
 		tr1.push('<td>接口<br/>统计日期</td>');
@@ -105,4 +120,4 @@ $(function(){});
 		statics4range : statics4range,
 		write : write	
 	}
-	esb.statics('2016-11-07');
+	esb.statics('2017-01-01');

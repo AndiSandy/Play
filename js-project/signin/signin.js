@@ -969,7 +969,7 @@
   	
   	spring.timer.deamon.run();
 
-  	$.jsonp = function(url,data,callback,callname,method){
+  	$.jsonp = function(url,data,callback,callname,method,error){
 		var post = {
 			type: method||"POST",
 			url: url,
@@ -979,7 +979,8 @@
 			dataType : "jsonp",
 			jsonp : "callback",
 			jsonpCallback : callname,
-			success: callback
+			success: callback,
+			error : error
 		};
 		$.ajax(post);
 	}
@@ -1058,7 +1059,7 @@
 
 	//打卡
   	function sign(){
-  		var url = "http://sign.suning.com/sign/doSign.do";//http://vip.suning.com/sign/doSign.do
+  		var url = "//sign.suning.com/sign/doSign.do";////vip.suning.com/sign/doSign.do
   		var d = new Date;
   		//{"succ":true,"originalPrizeQty":3,"bonusRuleCode":"BR00005-3","finalPrizeQty":6,"prizeCatg":1,"slotNo":11,"bonusRuleValue":3,"signInRow":1,"signDate":"20161124","bonusRuleTip":"尊享V3福利","isFullSign":false,"bonusRuleOper":"+","prizeName":"云钻","triggerBonusRule":true}
   		//{signInRow:连续打卡,beatRatioTip:击败提示}
@@ -1094,7 +1095,9 @@
 					DialogShow.graphicalDialog('minos');	
 				}
 			}
-		},'lotteryDrawCallback','GET');
+		},'lotteryDrawCallback','GET',function(){
+			console.info('sigin error')
+		});
   	}
   	function print(msg){
   		var consoleEl = $('[console]');
@@ -1103,7 +1106,7 @@
 		consoleEl.scrollTop(consoleEl.scrollTop()+10000)
   	}
 	function deamon(time){
-		var url = "http://vip.suning.com/sign/welcome.do?live=true";
+		var url = "//vip.suning.com/sign/welcome.do?live=true";
 		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
 		var ifEl = $(iframeHtml);
 		$(document.body).append(ifEl);
