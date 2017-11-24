@@ -1049,68 +1049,26 @@
 			return cacheObj[name];
 		}
 	}
-	window._ = {
+	window.__ = {
 			objarr2map : objarr2map,
 			arr2map : arr2map,
 			map2objarr : map2objarr,
 			map2arr : map2arr,
 			cache : cache
 	};
-
-	//打卡
-  	function sign(){
-  		var url = "//sign.suning.com/sign/doSign.do";////vip.suning.com/sign/doSign.do
-  		var d = new Date;
-  		//{"succ":true,"originalPrizeQty":3,"bonusRuleCode":"BR00005-3","finalPrizeQty":6,"prizeCatg":1,"slotNo":11,"bonusRuleValue":3,"signInRow":1,"signDate":"20161124","bonusRuleTip":"尊享V3福利","isFullSign":false,"bonusRuleOper":"+","prizeName":"云钻","triggerBonusRule":true}
-  		//{signInRow:连续打卡,beatRatioTip:击败提示}
-  		$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime()},function(data){
-			if( data.succ ){
-				//success
-				var content = "[{f()}]<br/>打卡成功{finalPrizeQty}{prizeName}-{bonusRuleCode}-{slotNo}".format(data,d);
-				print(content);
-				var e = Constant.promotionMerchandiseListSize,j=data;
-				if (j.prizeCatg == 1) {
-					/*
-					DialogShow.diamondDialog(j.originalPrizeQty, j.bonusRuleOper, j.bonusRuleValue, j.bonusRuleTip, j.finalPrizeQty, e, j.beatRatioTip);
-					setTimeout(function(){
-						$('.n-close').click();
-					},3000)*/
-				}else if (j.prizeCatg == 2) {
-                    DialogShow.couponDialog(j.prizeName)
-                } else {
-                    if (j.prizeCatg == 3) {
-                        DialogShow.virtualDialog(j.prizeName, j.finalPrizeQty, j.signDate)
-                    } else {
-                        if (j.prizeCatg == 4) {
-                            DialogShow.physicalDialog(j.prizeName, j.signDate)
-                        } else {
-                            DialogShow.thanksDialog()
-                        }
-                    }
-                }
-			}else{
-				var content = "[{f()}]<br/>打卡失败{errorCode}".format(data,d);
-				print(content);
-				if( data.errorCode=='err.minosRequireVCS' ){
-					DialogShow.graphicalDialog('minos');	
-				}
-			}
-		},'lotteryDrawCallback','GET',function(){
-			console.info('sigin error')
-		});
-  	}
-  	function print(msg){
-  		var consoleEl = $('[console]');
-  		var msgTpl = '<span class="label-info msg">{0}</span>'.format(msg);
-  		consoleEl.append(msgTpl);
+	
+	function print(msg){
+		var consoleEl = $('[console]');
+		var msgTpl = '<span class="label-info msg">{0}</span>'.format(msg);
+		consoleEl.append(msgTpl);
 		consoleEl.scrollTop(consoleEl.scrollTop()+10000)
-  	}
-	function deamon(time){
-		var url = "//vip.suning.com/sign/welcome.do?live=true";
+	}
+	function $deamon(time,url){
+		url = url || "//vip.suning.com/sign/welcome.do?live=true";
 		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
 		var ifEl = $(iframeHtml);
 		$(document.body).append(ifEl);
-		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<a href="javascript:daka.sign();">手动打卡</a></span></div>';
+		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;z-index:9999;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<a href="javascript:daka.sign();">手动打卡</a></span></div>';
 		$(document.body).append(consoleEl);
 		setInterval(function(){
 			console.clear();
@@ -1123,26 +1081,111 @@
 			}
 		},time||50000);
 	}
+
+	function suningDaka(){
+		//打卡
+		function sign(){
+			var url = "//sign.suning.com/sign/doSign.do";////vip.suning.com/sign/doSign.do
+			var d = new Date;
+			//{"succ":true,"originalPrizeQty":3,"bonusRuleCode":"BR00005-3","finalPrizeQty":6,"prizeCatg":1,"slotNo":11,"bonusRuleValue":3,"signInRow":1,"signDate":"20161124","bonusRuleTip":"尊享V3福利","isFullSign":false,"bonusRuleOper":"+","prizeName":"云钻","triggerBonusRule":true}
+			//{signInRow:连续打卡,beatRatioTip:击败提示}
+			$.jsonp(url,{'dt' : encodeURIComponent(bd.rst()),_:new Date().getTime()},function(data){
+				if( data.succ ){
+					//success
+					var content = "[{f()}]<br/>打卡成功{finalPrizeQty}{prizeName}-{bonusRuleCode}-{slotNo}".format(data,d);
+					print(content);
+					var e = Constant.promotionMerchandiseListSize,j=data;
+					if (j.prizeCatg == 1) {
+						/*
+						DialogShow.diamondDialog(j.originalPrizeQty, j.bonusRuleOper, j.bonusRuleValue, j.bonusRuleTip, j.finalPrizeQty, e, j.beatRatioTip);
+						setTimeout(function(){
+							$('.n-close').click();
+						},3000)*/
+					}else if (j.prizeCatg == 2) {
+						DialogShow.couponDialog(j.prizeName)
+					} else {
+						if (j.prizeCatg == 3) {
+							DialogShow.virtualDialog(j.prizeName, j.finalPrizeQty, j.signDate)
+						} else {
+							if (j.prizeCatg == 4) {
+								DialogShow.physicalDialog(j.prizeName, j.signDate)
+							} else {
+								DialogShow.thanksDialog()
+							}
+						}
+					}
+				}else{
+					var content = "[{f()}]<br/>打卡失败{errorCode}".format(data,d);
+					print(content);
+					if( data.errorCode=='err.minosRequireVCS' ){
+						DialogShow.graphicalDialog('minos');	
+					}
+				}
+			},'lotteryDrawCallback','GET',function(){
+				console.info('sigin error')
+			});
+		}
+		return {
+			sign : sign,
+			deamon : function(t){
+				$deamon(t)
+			}
+		};
+	}
+
+	function pptvDaka(){
+		//打卡
+		function sign(){
+			seajs.use(['mylogin','jquery','md5','svipLayer'], function(mylogin, $, md5,svipLayer){
+				var d = new Date;
+				var index = "";
+				for(var i = 0; i < 6; i++){
+					var nu = Math.floor(Math.random() * 10);
+					if(nu == 0){
+						nu = 1;
+					}
+					index += nu;
+				}
+				var doDailyPcardurl = "http://api.usergrowth.pptv.com/doDailyPcard?username=" + mylogin.username
+						+ "&from=web&version=unknown&index=" + index + "&addstr="
+						+ md5.hex_md5(encodeURIComponent(mylogin.username + "$DAILY_PCARD$" + index))
+						+ "&format=jsonp&cb=?&token=" + mylogin.token;
+				$.getJSON(doDailyPcardurl, function(data){
+					if(data["flag"] == "0"){
+						var getJifen = data["result"]["obtainAward"].match(/\d+/)[0];
+						print("[{f()}]<br/>打卡成功+{finalPrizeQty}".format({finalPrizeQty:getJifen},d));
+					} else{
+						print("[{f()}]<br/>打卡失败-{decodeURIComponent(message)}".format(data,d));
+						console.log("dakashibai");
+					}
+				});
+			});
+		}
+		return {
+			sign : sign,
+			deamon : function(t){
+				$deamon(t,'http://i.pptv.com/2015usercenter/msg')
+			}
+		};
+	}
+	window.daka = suningDaka();
+	if( location.href.indexOf('pptv') >=0 ){
+		daka = pptvDaka();
+	}
 	var live = $.request.get('live') == 'true';
 	if( !live ){
 		//定时打卡
-		var yund_config = _.cache("yund_config") || {};
+		var yund_config = __.cache("yund_config") || {};
 		var time_el = yund_config.sign_time_el || '* 50 8 * * *';
 		spring.timer.add({name:'qp',cronExpression:time_el,job:function(){
-				sign();
+				daka.sign();
 				console.info('sign...');
 			}
 		});
-
 		var liveTime = yund_config.liveTime;
 		$('[name=deamon]').remove();
-		deamon(liveTime);
+		daka.deamon(liveTime);
 	}
-	window.daka = {
-		sign : sign,
-		print : print,
-		deamon : deamon
-	};
 	
 	
 }(jQuery));

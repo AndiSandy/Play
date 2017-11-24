@@ -20,15 +20,6 @@
         "48": "images/icon-32.png",
         "128": "images/icon-128.png"
     },
-    
-    "browser_action": {
-	    "default_icon": {                    // 可选
-	      "19": "images/icon-19.png",           // 可选
-	      "38": "images/icon-38.png"            // 可选
-	    },
-	    "default_title": "player",      // 可选，在工具提示中显示
-	    "default_popup": "popup.html"        // 可选
-	},
     "content_scripts": [{
         "js": ["lib/base.m.js","js/test.js"],
         "matches": ["http://*.suning.com/*","https://*.suning.com/*","http://*.cnsuning.com/*","https://*.cnsuning.com/*","http://*/*","https://*/*" ],
