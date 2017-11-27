@@ -186,33 +186,45 @@ $.fx.step.backgroundPosition = function(fx) {
             </style>
             <div class='game-viewport'>
                 <div id="all">
-                    当前账户<span class="t_num t_num1"></span>
+                    当前账户<span class="t_num t_num1" points></span>
+                    云钻输入<span class="t_num t_num1" dinput></span>
                 </div>
             </div>
         */});
         self.extend({
-            viewport : view_html
+            viewport : view_html,
+            el : {
+                points : '[points]',
+                dinput : '[dinput]'
+            }
         });
         
-        function show_num(n) {
-            var it = $(".t_num1 i");
+        function show_num(n,el) {
+            el = el || '.t_num1';
+            var it = $(el+" i");
             var len = String(n).length;
             for(var i = 0; i < len; i++) {
                 if(it.length <= i) {
-                    $(".t_num1").append("<i></i>");
+                    $(el).append("<i></i>");
                 }
                 var num = String(n).charAt(i);
                 //根据数字图片的高度设置相应的值
                 var y = -parseInt(num) * 58;
-                var obj = $(".t_num1 i").eq(i);
+                var obj = $(el+" i").eq(i);
                 obj.animate({
                     backgroundPosition: '(0 ' + String(y) + 'px)'
                 }, 'slow', 'swing', function() {});
             }
-            $("#cur_num").val(n);
         }
         function initialize(){
             $('body').append(self.viewport);
+            $(window).on('game.played',function(e,r){
+                show_num(r.total,self.el.points);
+                show_num(r.dinput,self.el.dinput);
+            });
+            $(window).on('points.loaded',function(e,points){
+                show_num(points,self.el.points);
+            });
         }
         methods.extend({
             initialize : initialize,
@@ -305,7 +317,7 @@ $.fx.step.backgroundPosition = function(fx) {
                     }
                 }
                 console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{total}]'.format(r));
-                suning.yun.diamond.game.view.show_num(r.total);
+                $(window).trigger('game.played',[r]);
             });
         }
         function query(){
@@ -313,7 +325,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 $(self.el.sys_points).html(points);
                 self.points = points;
                 console.info('当前账户：[{points}]'.format(self));
-                suning.yun.diamond.game.view.show_num(self.points);
+                $(window).trigger('points.loaded',[points]);
             });
         }
         function initialize(){
