@@ -186,8 +186,8 @@ $.fx.step.backgroundPosition = function(fx) {
             </style>
             <div class='game-viewport'>
                 <div id="all">
-                    当前账户<span class="t_num t_num1" points></span>
-                    云钻输入<span class="t_num t_num1" dinput></span>
+                    当前账户<span class="t_num t_num1" points></span>当前输入<span class="t_num t_num1" dinput></span>
+                    输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
                 </div>
             </div>
         */});
@@ -195,14 +195,16 @@ $.fx.step.backgroundPosition = function(fx) {
             viewport : view_html,
             el : {
                 points : '[points]',
-                dinput : '[dinput]'
+                dinput : '[dinput]',
+                doutput : '[doutput]'
             }
         });
         
         function show_num(n,el) {
             el = el || '.t_num1';
-            var it = $(el+" i");
             var len = String(n).length;
+            $(el+" i:gt("+(len-1)+")").remove();
+            var it = $(el+" i");
             for(var i = 0; i < len; i++) {
                 if(it.length <= i) {
                     $(el).append("<i></i>");
@@ -219,11 +221,16 @@ $.fx.step.backgroundPosition = function(fx) {
         function initialize(){
             $('body').append(self.viewport);
             $(window).on('game.played',function(e,r){
-                show_num(r.total,self.el.points);
-                show_num(r.dinput,self.el.dinput);
+                show_num(r.points,self.el.points);
+                show_num(r.doutput,self.el.doutput);
             });
-            $(window).on('points.loaded',function(e,points){
+            $(window).on('dinput.change',function(e,player){
+                show_num(player.dinput,self.el.dinput);
+                show_num(player.points,self.el.points);
+            });
+            $(window).on('points.loaded',function(e,points,dinput){
                 show_num(points,self.el.points);
+                show_num(dinput,self.el.dinput);
             });
         }
         methods.extend({
@@ -268,17 +275,19 @@ $.fx.step.backgroundPosition = function(fx) {
             self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
             $(self.el.sys_input).val(self.dinput);
             console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            $(window).trigger('dinput.change',[self]);
         }
         function down(){
             self.level --;
             self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
             $(self.el.sys_input).val(self.dinput);
             console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            $(window).trigger('dinput.change',[self]);
         }
         //分析
         function analyze(r){
             self.current.records.push(r);
-            r.total = self.points = self.points + r.dresult;
+            r.points = self.points = self.points + r.dresult;
 
             $(window).trigger('analyze.before',[r]);
             self.current.ratemap[r.p]++;
@@ -310,13 +319,13 @@ $.fx.step.backgroundPosition = function(fx) {
                 var r = $.extend({},params,result);
                 analyze(r);
                 if( r.p > 1 ){
-                    var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{total}]".format(r);
+                    var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{points}]".format(r);
                     with(self.style){
                         var styles = [n,r,n,r,n];
                         logStyle(content,styles);
                     }
                 }
-                console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{total}]'.format(r));
+                console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
                 $(window).trigger('game.played',[r]);
             });
         }
@@ -325,7 +334,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 $(self.el.sys_points).html(points);
                 self.points = points;
                 console.info('当前账户：[{points}]'.format(self));
-                $(window).trigger('points.loaded',[points]);
+                $(window).trigger('points.loaded',[points,self.dinput]);
             });
         }
         function initialize(){
