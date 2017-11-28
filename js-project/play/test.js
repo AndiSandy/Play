@@ -95,6 +95,7 @@ $.fx.step.backgroundPosition = function(fx) {
             debug : req['yun.diamond'],
             service : {
                 play : '//vip.suning.com/pointGame/execute.do?dt={encodeURIComponent(bd.rst())}&inputNum={dinput}&gameActivitiesConfigureId={gameid}',
+                wap_play : '//vip.suning.com/m/pointGame/execute.do?dt={encodeURIComponent(token)}&X-CSRF-TOKEN={csrftoken}',
                 query_points : '//vip.suning.com/ajax/list/memberPoints.do',
                 records : '//localhost:8443/demo1-web/simple/add-play-records.jsonp',
                 analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp'
@@ -127,6 +128,29 @@ $.fx.step.backgroundPosition = function(fx) {
                 (self.debug||!callback) && console.table([params]);
                 (self.debug||!callback) && console.table([data]);
             },'json');
+        }
+        function wap_play(dinput,callback){
+            bd.rss(function(token) {
+                var gameid = $('.bl-rule a').attr('href').match(/gameActivitiesConfigureId=(\w+)/)[1];
+                var params = {dinput:dinput,gameid:gameid,csrftoken:csrftoken,token:token,playtime:Date.now().format()};
+                var data1 = {inputNum:dinput,gameActivitiesConfigureId:gameid};
+                var url = self.service.wap_play.format(params);
+                $.post(url,data1,function(json){
+                    //success{"awardsResult":1.0,"content":"恭喜您获得10个云钻!","result":"020","resultCode":"GAMEACTIVITIES_DEDUCT_POINT_FAIL","resultType":"1","state":"1"}
+                    var data = map(json,self.propmap);
+                    if( data.p != null ){
+                        var doutput = data.p * params.dinput;
+                        data.doutput = doutput;
+                        data.dresult = data.doutput - params.dinput;
+                        records(params,data);
+                    }else{
+                        self.debug && console.info('error result',data);
+                    }
+                    callback && callback(params,data);
+                    (self.debug||!callback) && console.table([params]);
+                    (self.debug||!callback) && console.table([data]);
+                },'json');
+            });
         }
         function query_points(callback){
             $.jsonp(self.service.query_points,{},function(json){
@@ -161,6 +185,7 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         methods.extend({
             play : play,
+            wap_play : wap_play,
             query_points:query_points,
             analyze_recoreds : analyze_recoreds,
             records : records
@@ -250,8 +275,8 @@ $.fx.step.backgroundPosition = function(fx) {
             dinput : 10,
             points : 0,
             el :{
-                sys_input : '.diam-num',
-                sys_points : '#points'
+                sys_input : '.diam-num,.bet-num',
+                sys_points : '#points,.residue-number .number'
             },
             history:{
                 rates : []
@@ -315,7 +340,8 @@ $.fx.step.backgroundPosition = function(fx) {
             return rates;
         }
         function play(){
-            suning.yun.diamond.play(self.dinput,function(params,result){
+            $(window).trigger('game.play.before',[self]);
+            function play$callback(params,result){
                 var r = $.extend({},params,result);
                 analyze(r);
                 if( r.p > 1 ){
@@ -327,7 +353,13 @@ $.fx.step.backgroundPosition = function(fx) {
                 }
                 console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
                 $(window).trigger('game.played',[r]);
-            });
+            }
+            if( location.href.indexOf('/m/') >=0 ){
+                suning.yun.diamond.wap_play(self.dinput,play$callback);
+            }else{
+                suning.yun.diamond.play(self.dinput,play$callback);    
+            }
+            
         }
         function query(){
             suning.yun.diamond.query_points(function(points){
