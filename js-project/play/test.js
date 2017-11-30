@@ -98,7 +98,8 @@ $.fx.step.backgroundPosition = function(fx) {
                 wap_play : '//vip.suning.com/m/pointGame/execute.do?dt={encodeURIComponent(token)}&X-CSRF-TOKEN={csrftoken}',
                 query_points : '//vip.suning.com/ajax/list/memberPoints.do',
                 records : '//localhost:8443/demo1-web/simple/add-play-records.jsonp',
-                analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp'
+                analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp',
+                query_player : '//vip.suning.com/ajax/list/memberInfo.do'
             },
             propmap : {
                 awardsResult : 'p',
@@ -152,6 +153,13 @@ $.fx.step.backgroundPosition = function(fx) {
                 },'json');
             });
         }
+        function query_player(callback){
+            var url = self.service.query_player;
+            $.post(url,{},function(json){
+                callback && callback(json);
+                (self.debug||!callback) && console.table([json]);
+            },'json');
+        }
         function query_points(callback){
             $.jsonp(self.service.query_points,{},function(json){
                 var points = json.pointNum;
@@ -171,6 +179,7 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         function records(params,result,callback){
             params = $.extend({},params,result);
+            $(window).trigger('record.before',[params]);
             $.jsonp(self.service.records,{params:JSON.stringify(params)},function(json){
                 self.debug && console.info('add play records',json);
                 if( json.success ){
@@ -187,6 +196,7 @@ $.fx.step.backgroundPosition = function(fx) {
             play : play,
             wap_play : wap_play,
             query_points:query_points,
+            query_player : query_player,
             analyze_recoreds : analyze_recoreds,
             records : records
         });
@@ -299,14 +309,14 @@ $.fx.step.backgroundPosition = function(fx) {
             self.level ++;
             self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
             $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
         }
         function down(){
             self.level --;
             self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
             $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
         }
         //分析
@@ -343,16 +353,21 @@ $.fx.step.backgroundPosition = function(fx) {
             $(window).trigger('game.play.before',[self]);
             function play$callback(params,result){
                 var r = $.extend({},params,result);
-                analyze(r);
-                if( r.p > 1 ){
-                    var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{points}]".format(r);
-                    with(self.style){
-                        var styles = [n,r,n,r,n];
-                        logStyle(content,styles);
+                if( r.rstate == '1' ){
+                    analyze(r);
+                    if( r.p > 1 ){
+                        var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{points}]".format(r);
+                        with(self.style){
+                            var styles = [n,r,n,r,n];
+                            logStyle(content,styles);
+                        }
                     }
+                    console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
+                    $(window).trigger('game.played',[r]);
+                }else{
+                    console.info(r.msg);
                 }
-                console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
-                $(window).trigger('game.played',[r]);
+                
             }
             if( location.href.indexOf('/m/') >=0 ){
                 suning.yun.diamond.wap_play(self.dinput,play$callback);
@@ -367,6 +382,12 @@ $.fx.step.backgroundPosition = function(fx) {
                 self.points = points;
                 console.info('当前账户：[{points}]'.format(self));
                 $(window).trigger('points.loaded',[points,self.dinput]);
+            });
+        }
+        function query_player(){
+            suning.yun.diamond.query_player(function(player){
+                self.playerid = player.userName || player.nickName || player.custNum;
+                console.info('playerid',self.playerid);
             });
         }
         function initialize(){
@@ -396,6 +417,10 @@ $.fx.step.backgroundPosition = function(fx) {
                 self.current.ratemap[r] = 0;
             }
             query();
+            query_player();
+            $(window).on('record.before',function(e,params){
+                params.playerid = self.playerid
+            });
             suning.yun.diamond.analyze_recoreds(function(json){
                 if( json.success && json.rates ){
                     self.history.rates = json.rates;
