@@ -1068,7 +1068,7 @@
 		var iframeHtml = "<iframe src='"+url+"' name='deamon' width='100' height='50' />";
 		var ifEl = $(iframeHtml);
 		$(document.body).append(ifEl);
-		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;z-index:9999;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<a href="javascript:daka.sign();">手动打卡</a></span></div>';
+		var consoleEl = '<div console style="position:fixed;width:300px;height:80%;z-index:9999;bottom: 20px;overflow-y: auto;top: 53px;"><span class="label-info msg">hello<a href="javascript:daka.sign();">手动打卡</a><a href="javascript:daka.logout();">注销</a></span></div>';
 		$(document.body).append(consoleEl);
 		setInterval(function(){
 			console.clear();
@@ -1127,6 +1127,7 @@
 		}
 		return {
 			sign : sign,
+			logout : $.noop,
 			deamon : function(t){
 				$deamon(t)
 			}
@@ -1161,8 +1162,12 @@
 				});
 			});
 		}
+		function logout(){
+			seajs.use(['user'],function(u){console.info(u);u.logout()});
+		}
 		return {
 			sign : sign,
+			logout : logout,
 			deamon : function(t){
 				$deamon(t,'http://i.pptv.com/2015usercenter/msg')
 			}

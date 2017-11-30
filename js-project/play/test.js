@@ -98,7 +98,8 @@ $.fx.step.backgroundPosition = function(fx) {
                 wap_play : '//vip.suning.com/m/pointGame/execute.do?dt={encodeURIComponent(token)}&X-CSRF-TOKEN={csrftoken}',
                 query_points : '//vip.suning.com/ajax/list/memberPoints.do',
                 records : '//localhost:8443/demo1-web/simple/add-play-records.jsonp',
-                analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp'
+                analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp',
+                query_player : '//vip.suning.com/ajax/list/memberInfo.do'
             },
             propmap : {
                 awardsResult : 'p',
@@ -152,6 +153,13 @@ $.fx.step.backgroundPosition = function(fx) {
                 },'json');
             });
         }
+        function query_player(callback){
+            var url = self.service.query_player;
+            $.post(url,{},function(json){
+                callback && callback(json);
+                (self.debug||!callback) && console.table([json]);
+            },'json');
+        }
         function query_points(callback){
             $.jsonp(self.service.query_points,{},function(json){
                 var points = json.pointNum;
@@ -171,6 +179,7 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         function records(params,result,callback){
             params = $.extend({},params,result);
+            $(window).trigger('record.before',[params]);
             $.jsonp(self.service.records,{params:JSON.stringify(params)},function(json){
                 self.debug && console.info('add play records',json);
                 if( json.success ){
@@ -187,15 +196,130 @@ $.fx.step.backgroundPosition = function(fx) {
             play : play,
             wap_play : wap_play,
             query_points:query_points,
+            query_player : query_player,
             analyze_recoreds : analyze_recoreds,
             records : records
         });
     }));
 	
+    define('suning.yun.diamond.chart',clazz(function(self,methods){
+        var data = {
+            length : 0,
+            datetime : [],
+            dinput : [],
+            doutput : [],
+            p : []
+        };
+        var option = {
+            title : {
+                text: '--变化',
+                show : false
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            legend: {
+                data:['输入','输出','倍数']
+            },
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            calculable : true,
+            xAxis : [
+                {
+                    boundaryGap : false,
+                    data : data.datetime
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value',
+                    name : '钻',
+                    axisLabel : {
+                        formatter: '{value} 钻'
+                    }
+                },
+                {
+                    type : 'value',
+                    name : '倍',
+                    axisLabel : {
+                        formatter: '{value} 倍'
+                    }
+                }
+            ],
+            series : [
+                {
+                    name:'输入',
+                    type:'bar',
+                    barMaxWidth : 30,
+                    barMinHeight : 5,
+                    data:data.dinput
+                },
+                {
+                    name:'输出',
+                    type:'bar',
+                    barMaxWidth : 30,
+                    barMinHeight : 5,
+                    data:data.doutput
+                },
+                {
+                    name:'倍数',
+                    type:'line',
+                    yAxisIndex: 1,
+                    data:data.p
+                }
+            ]
+        };
+        self.extend({
+            max : 50,
+            data : data,
+            option : option
+        });
+        function update(r){
+            if(data.length > self.max ){
+                data.datetime.shift();
+                data.dinput.shift();
+                data.doutput.shift();
+                data.p.shift();
+            }
+            data.datetime.push(r.playtime);
+            data.dinput.push(r.dinput);
+            data.doutput.push(r.doutput);
+            data.p.push(r.p);
+            data.length ++;
+
+            option.xAxis[0].data = data.datetime;
+            option.series[0].data = data.dinput;
+            option.series[1].data = data.doutput;
+            option.series[2].data = data.p;
+        }
+        function initialize(chartid){
+            echarts.registerTheme('macarons',echarts.theme.macarons);
+            var dchart = echarts.init(document.getElementById(chartid),'macarons');
+            self.dchart = dchart;
+            dchart.showLoading();
+            $(window).on('chart.load',function(e,r){
+                update(r);
+                dchart.setOption(option);
+                dchart.hideLoading();
+            });
+        }
+        methods.extend({
+            initialize : initialize
+        });
+    }));
+
     define('suning.yun.diamond.game.view',clazz(function(self,methods){
         var view_html = heredoc(function(){/*
             <style>
-                .game-viewport{position:fixed;bottom:0px;width:100%;height:150px;background:white;z-index:9999;}
+                .game-viewport{position:fixed;bottom:0px;width:100%;height:250px;background:white;z-index:9999;}
                 #all{
                     width: 100%;
                     margin: 0 auto;
@@ -208,11 +332,14 @@ $.fx.step.backgroundPosition = function(fx) {
                     background: url('http://www.17sucai.com/preview/1/2017-09-22/scroll/img/number1.png') no-repeat;
                     background-position: 0 0;
                 }
+                #dchart{height:200px;width:100%;}
             </style>
             <div class='game-viewport'>
                 <div id="all">
                     当前账户<span class="t_num t_num1" points></span>当前输入<span class="t_num t_num1" dinput></span>
                     输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
+                </div>
+                <div id="dchart">
                 </div>
             </div>
         */});
@@ -221,7 +348,8 @@ $.fx.step.backgroundPosition = function(fx) {
             el : {
                 points : '[points]',
                 dinput : '[dinput]',
-                doutput : '[doutput]'
+                doutput : '[doutput]',
+                chart : 'dchart'
             }
         });
         
@@ -248,6 +376,7 @@ $.fx.step.backgroundPosition = function(fx) {
             $(window).on('game.played',function(e,r){
                 show_num(r.points,self.el.points);
                 show_num(r.doutput,self.el.doutput);
+                $(window).trigger('chart.load',[r]);
             });
             $(window).on('dinput.change',function(e,player){
                 show_num(player.dinput,self.el.dinput);
@@ -257,6 +386,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 show_num(points,self.el.points);
                 show_num(dinput,self.el.dinput);
             });
+            suning.yun.diamond.chart.initialize(self.el.chart);
         }
         methods.extend({
             initialize : initialize,
@@ -266,6 +396,7 @@ $.fx.step.backgroundPosition = function(fx) {
             initialize();    
         });
     }));
+    
     define('suning.yun.diamond.player',clazz(function(self,methods){
         self.extend({
             dlevels : [10,20,30,40,50],
@@ -297,16 +428,16 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         function up(){
             self.level ++;
-            self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
+            self.dinput = self.dlevels[(self.level%self.level_max+self.level_max)%self.level_max];
             $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
         }
         function down(){
             self.level --;
-            self.dinput = self.dlevels[Math.abs(self.level%self.level_max)];
+            self.dinput = self.dlevels[(self.level%self.level_max+self.level_max)%self.level_max];
             $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入额度[{dinput}]'.format(self));
+            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
         }
         //分析
@@ -343,16 +474,21 @@ $.fx.step.backgroundPosition = function(fx) {
             $(window).trigger('game.play.before',[self]);
             function play$callback(params,result){
                 var r = $.extend({},params,result);
-                analyze(r);
-                if( r.p > 1 ){
-                    var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{points}]".format(r);
-                    with(self.style){
-                        var styles = [n,r,n,r,n];
-                        logStyle(content,styles);
+                if( r.rstate == '1' ){
+                    analyze(r);
+                    if( r.p > 1 ){
+                        var content = "%c恭喜您,云钻[{dinput}]%cx{p}%c倍,获得了%c{doutput}({dresult})%c个云钻!,账户余额[{points}]".format(r);
+                        with(self.style){
+                            var styles = [n,r,n,r,n];
+                            logStyle(content,styles);
+                        }
                     }
+                    console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
+                    $(window).trigger('game.played',[r]);
+                }else{
+                    console.info(r.msg);
                 }
-                console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
-                $(window).trigger('game.played',[r]);
+                
             }
             if( location.href.indexOf('/m/') >=0 ){
                 suning.yun.diamond.wap_play(self.dinput,play$callback);
@@ -367,6 +503,12 @@ $.fx.step.backgroundPosition = function(fx) {
                 self.points = points;
                 console.info('当前账户：[{points}]'.format(self));
                 $(window).trigger('points.loaded',[points,self.dinput]);
+            });
+        }
+        function query_player(){
+            suning.yun.diamond.query_player(function(player){
+                self.playerid = player.userName || player.nickName || player.custNum;
+                console.info('playerid',self.playerid);
             });
         }
         function initialize(){
@@ -396,6 +538,10 @@ $.fx.step.backgroundPosition = function(fx) {
                 self.current.ratemap[r] = 0;
             }
             query();
+            query_player();
+            $(window).on('record.before',function(e,params){
+                params.playerid = self.playerid
+            });
             suning.yun.diamond.analyze_recoreds(function(json){
                 if( json.success && json.rates ){
                     self.history.rates = json.rates;
