@@ -75,8 +75,9 @@ $.fx.step.backgroundPosition = function(fx) {
         function extend(o){
             $.extend(this,o);
         }
+        function loader(initFn){$(function(){initFn();});}
         var self={extend:extend},methods={extend:extend};
-        proto(self,methods);
+        proto(self,methods,{l:loader});
         $.extend(self,methods);
         return self;
     }
@@ -316,7 +317,7 @@ $.fx.step.backgroundPosition = function(fx) {
         });
     }));
 
-    define('suning.yun.diamond.game.view',clazz(function(self,methods){
+    define('suning.yun.diamond.game.view',clazz(function(self,methods,env){
         var view_html = heredoc(function(){/*
             <style>
                 .game-viewport{position:fixed;bottom:0px;width:100%;height:250px;background:white;z-index:9999;}
@@ -373,7 +374,7 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         function initialize(){
             $('body').append(self.viewport);
-            $(window).on('game.played',function(e,r){
+            $(window).on('game.play.after',function(e,r){
                 show_num(r.points,self.el.points);
                 show_num(r.doutput,self.el.doutput);
                 $(window).trigger('chart.load',[r]);
@@ -392,17 +393,16 @@ $.fx.step.backgroundPosition = function(fx) {
             initialize : initialize,
             show_num : show_num
         });
-        $(function(){
-            initialize();    
-        });
+        env.l(initialize);
     }));
     
-    define('suning.yun.diamond.player',clazz(function(self,methods){
+    define('suning.yun.diamond.player',clazz(function(self,methods,env){
         self.extend({
             dlevels : [10,20,30,40,50],
             rlevels : [0.5,0,1,3,5],
             level_max : 5,
             level : 0,
+            dlevel : 0,
             dinput : 10,
             points : 0,
             el :{
@@ -413,10 +413,12 @@ $.fx.step.backgroundPosition = function(fx) {
                 rates : []
             },
             current : {
+                rlevels : [],
                 records : [],
                 rates : [],
                 ratemap : {}
             },
+            pre : {},
             style : {
                 r : "text-shadow: 0 1px 0 #fff,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:5em;color:red;",
                 n : 'color:black;font-size:14px;'   
@@ -426,24 +428,34 @@ $.fx.step.backgroundPosition = function(fx) {
             styles.unshift(content);
             console.info.apply(console,styles);
         }
-        function up(){
-            self.level ++;
-            self.dinput = self.dlevels[(self.level%self.level_max+self.level_max)%self.level_max];
+        function go2(level){
+            self.level = level;
+            self.dlevel = (self.level%self.level_max+self.level_max)%self.level_max
+            self.dinput = self.dlevels[self.dlevel];
             $(self.el.sys_input).val(self.dinput);
             console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
+        }
+        function up(){
+            self.level ++;
+            go2(self.level);
         }
         function down(){
             self.level --;
-            self.dinput = self.dlevels[(self.level%self.level_max+self.level_max)%self.level_max];
-            $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
-            $(window).trigger('dinput.change',[self]);
+            go2(self.level);
         }
         //分析
         function analyze(r){
-            self.current.records.push(r);
+            r.pre = self.pre;
+            self.pre.next = r;
+            self.pre = r;
+
             r.points = self.points = self.points + r.dresult;
+            r.rlevel = self.rlevels.indexOf(r.p);
+            r.dlevel = self.dlevel;
+
+            self.current.rlevels.unshift(r.rlevel);
+            self.current.records.unshift(r);
 
             $(window).trigger('analyze.before',[r]);
             self.current.ratemap[r.p]++;
@@ -466,12 +478,12 @@ $.fx.step.backgroundPosition = function(fx) {
             var rates = [];
             for(var p in rmap ){
                 var pcount = rmap[p];
-                rates.push({p:p,pcount:pcount});
+                rates.push({p:parseFloat(p),pcount:pcount});
             }
             return rates;
         }
-        function play(){
-            $(window).trigger('game.play.before',[self]);
+        function play(callback){
+            $(window).trigger('game.play.before',[self.pre,self]);
             function play$callback(params,result){
                 var r = $.extend({},params,result);
                 if( r.rstate == '1' ){
@@ -484,18 +496,17 @@ $.fx.step.backgroundPosition = function(fx) {
                         }
                     }
                     console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
-                    $(window).trigger('game.played',[r]);
+                    $(window).trigger('game.play.after',[r,self]);
                 }else{
                     console.info(r.msg);
                 }
-                
+                callback && callback(r);
             }
             if( location.href.indexOf('/m/') >=0 ){
                 suning.yun.diamond.wap_play(self.dinput,play$callback);
             }else{
                 suning.yun.diamond.play(self.dinput,play$callback);    
             }
-            
         }
         function query(){
             suning.yun.diamond.query_points(function(points){
@@ -551,9 +562,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 }
             });
         }
-        $(function(){
-            initialize();
-        });
+        env.l(initialize);
         methods.extend({
             up : up,
             down : down,
@@ -562,5 +571,331 @@ $.fx.step.backgroundPosition = function(fx) {
             initialize : initialize
         });
     }));
-})();
+    
+    define('suning.yun.diamond.game.helper',clazz(function(self,methods){
+        var node_network = {};
+        var mv_Fn_map = {};
+        var exec_Fn_map = {};
+        self.extend({
+            node_network : node_network,
+            mv_Fn_map : mv_Fn_map,
+            exec_Fn_map : exec_Fn_map,
+        });
+        function __eval_code__(code,context){
+            try{
+                return function(){
+                    with(context||window){
+                        return eval("("+(code)+")");
+                    }
+                }.apply(context||window);
+            }catch(e){
+                error('{0}eval处理异常-{1}',code,e);
+            }
+        }
+        function __eval_fn__(fn,context,args){
+            return __eval_code__(fn.toString().replace(/([^{]+\{)(.+?)(\}$)/,'$1 with(context){$2}$3('+(args||'')+')'),context);
+        }
+        function __eval__(obj,context,args){
+            if( $.isStr(obj) ){
+               return __eval_code__(obj,context);
+            }else if( $.isFunction(obj) ){
+                return __eval_fn__(obj,context,args);
+            }
+        }
+        var __const__ = {
+            __noop__ : 0x0,
+            __break__ : 0x1,
+            __continue__ : 0x2,
+            __match__ : 0x3
+        };
+        var cmd = {
+            is_break : function(c){return c == __const__.__break__;},
+            is_continue : function(c){return c == __const__.__continue__;},
+            is_match : function(c){return c == __const__.__match__;}
+        };
+        var NEXT = __const__.__continue__,STOP=__const__.__break__,MATCH=__const__.__match__,NOOP=__const__.__noop__;
+        function error(desc){
+            var d = new Date().toLocaleString();
+            req['format.debug'] && console.warn('['+d+']','[error]','字符串格式化错误 ',desc.formata(Array.copy(arguments,1)));
+        }
+        function route_node(node_name,context){
+            try{
+                var node = node_network[node_name];
+                var c = node.__match__(context);
+                //no matched
+                if( !cmd.is_match(c) ) return c;
+                //route
+                c = node.__route__(context);
+                if( cmd.is_match(c) ){
+                    //over
+                    c = STOP;
+                }else{
+                    c = node.__exec__(context);
+                }
+                req['format.debug'] && console.info(node_name);
+                return c;
+            }catch(e){
+                error('nodes-route2-{0}-处理{1}异常-{2}',node_name,e);
+                throw e;
+            }
+        }
+        $.isStr = function(s){
+            return typeof s == 'string';
+        }
+        function Node(node,node_name){
+            
+            function node_matchvalue_parse(context){
+                var ret = {},mv=node.matchvalue;
+                if( mv ){
+                    if( $.isFunction(mv) ){
+                        ret.mv = __eval__(mv,context) ;
+                    }else if( $.isStr(mv) ){
+                        var mv_arr = mv.split(',')
+                        for(var i=0;i<mv_arr.length;i++){
+                            var mv_str = mv_arr[i];
+                            var mvFn = mv_Fn_map[mv_str];
+                            ret.mv = __eval__(mvFn||mv_str,context);
+                            if(mvFn){
+                                ret[mv] = ret.mv;
+                            }
+                        }
+                    }
+                }
+                return ret;
+            }
+            //匹配
+            function node_match(context){
+                var matches = null,mo=node_matchvalue_parse(context),matchvalue=mo.mv;
+                //matchvalue regex match
+                if( $.isRegex(node.match) ){//regex
+                    matches = matchvalue.match(node.match);
+                }else if($.isFunction(node.match)){//match function
+                    if( $.isRegex(node.regex) && matchvalue ){
+                        var re_matches = matchvalue.match(node.regex);
+                        if( re_matches != null ){
+                            matches = node.match(context,re_matches);
+                        }
+                    }else{
+                        matches = node.match(context);
+                    }
+                }else if( $.isStr(node.match) ){
+                    var evel_str = node.match;
+                    matches = __eval_code__(evel_str,$.extend(mo,context));
+                }else if( $.isArray(node.match) ){
+                    var metch_arr = node.match;
+                    for(var i=0;i<metch_arr.length;i++){
+                        var match = match_arr[i];
+                        matches = __eval_code__(match,$.extend(mo,context));
+                        if(matches) break;
+                    }
+                }else{
+                    matches = true;
+                }
+                var c = node.match == null || !(matches == null || matches === false) ? MATCH : null;
+                return c;
+            }
+            //路由
+            function node_route(context){
+                if( node.route == null ){
+                    return NOOP;
+                }
+                var next_route=null,route_ret,route_matched;
+                var mo=node_matchvalue_parse(context),matchvalue=mo.mv;
+                if( $.isFunction(node.route) ){
+                    next_route = node.route(context,matchvalue);
+                }else if( $.isPlainObject(node.route) ){
+                    for(var route_name in node.route ){
+                        var route_obj = node.route[route_name];
+                        if( $.isRegex(route_obj) && matchvalue ){
+                            var regex = route_obj;
+                            route_matched = matchvalue.match(regex);
+                            if( route_matched ){
+                                next_route = route_name;
+                                break;
+                            }
+                        }else if( $.isFunction(route_obj) ){
+                            var route_fun = route_obj;
+                            route_matched = route_fun.apply(node,[context,matchvalue]);
+                            if( route_matched ){
+                                next_route = route_name;
+                                break;
+                            }
+                        }else if( $.isStr(route_obj) ){
+                            route_matched = __eval__(route_obj,context);
+                            if( route_matched ){
+                                next_route = route_name;
+                            }
+                            break;
+                        }else{
+                            next_route = route_name;
+                            break;
+                        }
+                    }
+                }else if( typeof node.route == 'string' ){
+                    next_route = node.route;
+                }else{
+                    error('route-{1}处理{0}无匹配路由',matchvalue,node.name);
+                }
+                if( next_route != null && node_network[next_route] ){
+                    route_ret = route_node(next_route,context);
+                }
+                var c = next_route != null && route_ret != null ? MATCH : null;
+                return c;
+            }
+            function node_exe_parse(context,exec){
+                var execFn = exec_Fn_map[exec||node.exec],ret=null;
+                execFn && (ret=__eval__(execFn,context));
+                if( execFn ){
+                    ret=__eval__(execFn,context);
+                }else{
+                   var execFns = node.exec.split(';');
+                   for(var i=0;i<execFns.length;i++){
+                        var execFnStr = execFns[i];
+                        var ms = execFnStr.match(/(.+?)\((.+?)\)$/);
+                        var execFnName = ms[1],args=ms[2]||'';
+                        execFn = exec_Fn_map[execFnName];
+                        if(execFn){
+                            ret = __eval__(execFn,context,args);
+                        }
+                   }
+                }
+                return ret;
+            }
+            //执行
+            function node_exec(context){
+                var ret = NEXT;
+                if($.isFunction(node.exec)){
+                    ret = node.exec(context);
+                }else if( $.isStr(node.exec) ){
+                    ret = node_exe_parse(context);
+                }else if( $.isPlainObject(node.exec) ){
+                    var exec_obj = node.exec;
+                    var mo=node_matchvalue_parse(context);
+                    for(var con in exec_obj){
+                        var exec = exec_obj[con];
+                        if(__eval__(con,$.extend(mo,context)) ){
+                            ret = node_exe_parse(context,exec);
+                            break;
+                        }
+                    }
+                }
+                return ret;
+            }
+            $.extend(node,{
+                name : node_name,
+                __match__ : node_match,
+                __exec__ : node_exec,
+                __route__ : node_route
+            });
+        }
+        
+        function initialize(){
+            for(var node_name in node_network){
+                var node = node_network[node_name];
+                Node(node,node_name);
+            }
+        }
+        function start(context){
+            for(var node_name in node_network){
+                var node = node_network[node_name];
+                if( node.entry === true ){
+                    var c = route_node(node_name,context);
+                    //no matched
+                    if( !cmd.is_match(c) ) continue;
+                    //matched
+                    if( cmd.is_continue(c) ){
+                        continue;
+                    }else if( cmd.is_break(c) ){
+                        break;
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }
 
+        $.extend(mv_Fn_map,{
+            'p' : 'po.pre.p',
+            'dlevel' : 'ro.dlevel'
+        });
+        $.extend(exec_Fn_map,{
+            NEXT : NEXT,
+            STOP : STOP,
+            UP : function(){po.up();},
+            DOWN : function(){po.down();},
+            GO2 : function(l){po.go2(l);},
+            SLEEP : function(t){ro.sleep(t)}
+        });
+        $.extend(node_network,{
+            'p5&d5;devel=0' : {
+                entry : true,
+                matchvalue : 'p,dlevel',
+                match : ['p==5&&dlevel=4','p<1&&dlevel=4'],
+                exec : 'GO2(0);NEXT'
+            },
+            'dlevel4&p<1;dlevel=0' : {
+                entry : true,
+                matchvalue : 'p,dlevel',
+                match : 'p<1&&dlevel=4',
+                exec : 'GO2(0);NEXT'
+            }
+        });
+        
+
+        initialize();
+        methods.extend({
+            start : start
+        });
+    }));
+
+    define('suning.yun.diamond.game.rookie',clazz(function(self,methods,env){
+        self.extend({
+            ttl : 1000,
+            ttn :30000
+        });
+        function run(){
+            function tick(){
+                console.info('============>',self.ttl,'秒自动刷新');
+                self.timeid = setTimeout(function(){
+                    tick$play();
+                },self.ttl);
+            }
+            function tick$play(){
+                suning.yun.diamond.player.play(function(){
+                    tick();
+                });
+            }
+            tick();
+        }
+        function stop(){
+            clearTimeout(self.timeid);
+        }
+        function sleep(ttn){
+            stop();
+            self.ttn = ttn||self.ttn;
+            setTimeout(function(){
+                run();
+            },self.ttn);
+            console.info('============>',self.ttn,'秒后重新开始');
+        }
+        function paly_before(pre,po){
+            suning.yun.diamond.game.helper.start({po:po,ro:self,pre:pre});
+        }
+        function paly_after(r,po){
+            
+        }
+        function initialize(){
+            $(window).on('game.play.before',function(e,pre,po){
+                paly_before(pre,po);
+            });
+            $(window).on('game.play.after',function(e,r,po){
+                paly_after(r,po);
+            });
+        }
+        env.l(initialize);
+        methods.extend({
+            run : run,
+            stop : stop
+        });
+    }));
+})();
