@@ -1530,8 +1530,8 @@
        ];		
 	try{
 		window.console = console || {};
-		console && console.log && console.log(helloworld, 'color:#009a61; font-size: 28px;', 'color:#009a61');
-		console.log(imageTxt.join('\n'),"background-color:#338fff;color:white;");
+		//console && console.log && console.log(helloworld, 'color:#009a61; font-size: 28px;', 'color:#009a61');
+		//console.log(imageTxt.join('\n'),"background-color:#338fff;color:white;");
 	}catch(e){}
 	
 })();

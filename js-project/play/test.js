@@ -117,18 +117,24 @@ $.fx.step.backgroundPosition = function(fx) {
             var url = self.service.play.format(params);
             $.get(url,function(json){
                 //success{"awardsResult":1.0,"content":"恭喜您获得10个云钻!","result":"020","resultCode":"GAMEACTIVITIES_DEDUCT_POINT_FAIL","resultType":"1","state":"1"}
-                var data = map(json,self.propmap);
-                if( data.p != null ){
-                    var doutput = data.p * params.dinput;
-                    data.doutput = doutput;
-                    data.dresult = data.doutput - params.dinput;
-                    records(params,data);
-                }else{
-                    self.debug && console.info('error result',data);
+                try{
+                    var data = map(json,self.propmap);
+                    if( data.p != null ){
+                        var doutput = data.p * params.dinput;
+                        data.doutput = doutput;
+                        data.dresult = data.doutput - params.dinput;
+                        records(params,data);
+                    }else{
+                        self.debug && console.info('error result',data);
+                    }
+                    callback && callback(params,data);
+                    (self.debug||!callback) && console.table([params]);
+                    (self.debug||!callback) && console.table([data]);
+                }catch(e){
+                    callback && callback(params,{rstate:'0',msg:'执行返回异常'});
+                    console.error(e);
                 }
-                callback && callback(params,data);
-                (self.debug||!callback) && console.table([params]);
-                (self.debug||!callback) && console.table([data]);
+                
             },'json');
         }
         function wap_play(dinput,callback){
@@ -184,7 +190,7 @@ $.fx.step.backgroundPosition = function(fx) {
             $.jsonp(self.service.records,{params:JSON.stringify(params)},function(json){
                 self.debug && console.info('add play records',json);
                 if( json.success ){
-                    (self.debug||!callback) && console.info('add play records success');
+                    (self.debug) && console.info('add play records success');
                     callback && callback(json);
                 }else{
                     (self.debug||!callback)  && console.info('add play records fail');
@@ -320,7 +326,7 @@ $.fx.step.backgroundPosition = function(fx) {
     define('suning.yun.diamond.game.view',clazz(function(self,methods,env){
         var view_html = heredoc(function(){/*
             <style>
-                .game-viewport{position:fixed;bottom:0px;width:100%;height:250px;background:white;z-index:9999;}
+                .game-viewport{position:fixed;bottom:0px;width:100%;height:350px;background:white;z-index:9999;}
                 #all{
                     width: 100%;
                     margin: 0 auto;
@@ -330,32 +336,52 @@ $.fx.step.backgroundPosition = function(fx) {
                     width: 33px;
                     height: 47px;
                     display: inline-block;
-                    background: url('http://www.17sucai.com/preview/1/2017-09-22/scroll/img/number1.png') no-repeat;
+                    background: url('//10.24.63.188:7071/play/number1.png') no-repeat;
                     background-position: 0 0;
                 }
-                #dchart{height:200px;width:100%;}
+                .t_num span{
+                    font-size: 70px;line-height: 41px;
+                }
+                #dchart{height:300px;width:100%;}
             </style>
             <div class='game-viewport'>
                 <div id="all">
-                    当前账户<span class="t_num t_num1" points></span>当前输入<span class="t_num t_num1" dinput></span>
+                    当前账户<span class="t_num t_num1" points></span>
+                    当前第<span class="t_num t_num1" playindex></span>次输入<span class="t_num t_num1" dinput></span>
                     输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
+                    本次结算<span class="t_num t_num1" cpoints></span>
+                    一个周期结算<span class="t_num t_num1" rpoints></span>
                 </div>
                 <div id="dchart">
                 </div>
             </div>
         */});
         self.extend({
-            viewport : view_html,
+            view_html : view_html,
             el : {
                 points : '[points]',
                 dinput : '[dinput]',
                 doutput : '[doutput]',
+                playindex : '[playindex]',
+                cpoints : '[cpoints]',
+                rpoints  : '[rpoints]',
                 chart : 'dchart'
             }
         });
         
-        function show_num(n,el) {
-            el = el || '.t_num1';
+        function show_num(n,el,bsign) {
+            el = el || '.t_num1',bsign = bsign == null ? false : bsign;
+            if(bsign){
+                var sign='+';
+                if( n < 0 ){
+                    sign = '-';
+                    n = Math.abs(n);
+                }
+                var selm = $($('[n-sign]',el)[0]||'<span n-sign></span>').html(sign);
+                $(el).prepend(selm);
+            }else{
+                n = Math.abs(n);
+            }
             var len = String(n).length;
             $(el+" i:gt("+(len-1)+")").remove();
             var it = $(el+" i");
@@ -373,19 +399,32 @@ $.fx.step.backgroundPosition = function(fx) {
             }
         }
         function initialize(){
+            self.viewport = $(view_html);
             $('body').append(self.viewport);
-            $(window).on('game.play.after',function(e,r){
+            self.viewport.height(window.innerHeight);
+            $('#dchart').height(Math.max(200,window.innerHeight-50));
+            $(window).on('game.play.after',function(e,r,po){
                 show_num(r.points,self.el.points);
                 show_num(r.doutput,self.el.doutput);
+                show_num(po.playindex,self.el.playindex);
+                show_num(po.current.points,self.el.cpoints,true);
                 $(window).trigger('chart.load',[r]);
             });
             $(window).on('dinput.change',function(e,player){
                 show_num(player.dinput,self.el.dinput);
                 show_num(player.points,self.el.points);
             });
-            $(window).on('points.loaded',function(e,points,dinput){
+            $(window).on('points.loaded',function(e,points,dinput,po){
                 show_num(points,self.el.points);
                 show_num(dinput,self.el.dinput);
+                show_num(po.playindex,self.el.playindex);
+                show_num(po.current.points,self.el.cpoints,true);
+            });
+            $(window).on('ro.play.after',function(e,ro){
+                show_num(ro.records.points,self.el.rpoints,true);
+            });
+            $(window).on('ro.loaded',function(e,ro){
+                show_num(ro.records.points,self.el.rpoints,true);
             });
             suning.yun.diamond.chart.initialize(self.el.chart);
         }
@@ -398,13 +437,16 @@ $.fx.step.backgroundPosition = function(fx) {
     
     define('suning.yun.diamond.player',clazz(function(self,methods,env){
         self.extend({
+            debug : req['yun.debug'],
             dlevels : [10,20,30,40,50],
             rlevels : [0.5,0,1,3,5],
+            rnames : ['h','z','o','t','f'],
             level_max : 5,
             level : 0,
             dlevel : 0,
             dinput : 10,
             points : 0,
+            playindex : 0,
             el :{
                 sys_input : '.diam-num,.bet-num',
                 sys_points : '#points,.residue-number .number'
@@ -413,6 +455,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 rates : []
             },
             current : {
+                points : 0,
                 rlevels : [],
                 records : [],
                 rates : [],
@@ -433,7 +476,7 @@ $.fx.step.backgroundPosition = function(fx) {
             self.dlevel = (self.level%self.level_max+self.level_max)%self.level_max
             self.dinput = self.dlevels[self.dlevel];
             $(self.el.sys_input).val(self.dinput);
-            console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
+            self.debug && console.info('当前账户：[{points}],当前输入[{dinput}]'.format(self));
             $(window).trigger('dinput.change',[self]);
         }
         function up(){
@@ -444,6 +487,16 @@ $.fx.step.backgroundPosition = function(fx) {
             self.level --;
             go2(self.level);
         }
+        function $up(){
+            self.dlevel ++;
+            self.dlevel = Math.min(self.dlevel,self.level_max-1);
+            go2(self.dlevel);
+        }
+        function $down(){
+            self.dlevel --;
+            self.dlevel = Math.max(self.dlevel,0);
+            go2(self.dlevel);
+        }
         //分析
         function analyze(r){
             r.pre = self.pre;
@@ -451,8 +504,11 @@ $.fx.step.backgroundPosition = function(fx) {
             self.pre = r;
 
             r.points = self.points = self.points + r.dresult;
+            self.current.points += r.dresult;
+            r.cpoints = self.current.points;
             r.rlevel = self.rlevels.indexOf(r.p);
             r.dlevel = self.dlevel;
+            r.rname = self.rnames[self.rlevel];
 
             self.current.rlevels.unshift(r.rlevel);
             self.current.records.unshift(r);
@@ -485,6 +541,7 @@ $.fx.step.backgroundPosition = function(fx) {
         function play(callback){
             $(window).trigger('game.play.before',[self.pre,self]);
             function play$callback(params,result){
+                self.playindex++;
                 var r = $.extend({},params,result);
                 if( r.rstate == '1' ){
                     analyze(r);
@@ -495,7 +552,7 @@ $.fx.step.backgroundPosition = function(fx) {
                             logStyle(content,styles);
                         }
                     }
-                    console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
+                    self.debug && console.info('shit,投入{dinput},获得{doutput}({dresult})个云钻!账户余额[{points}]'.format(r));
                     $(window).trigger('game.play.after',[r,self]);
                 }else{
                     console.info(r.msg);
@@ -513,7 +570,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 $(self.el.sys_points).html(points);
                 self.points = points;
                 console.info('当前账户：[{points}]'.format(self));
-                $(window).trigger('points.loaded',[points,self.dinput]);
+                $(window).trigger('points.loaded',[points,self.dinput,self]);
             });
         }
         function query_player(){
@@ -566,6 +623,9 @@ $.fx.step.backgroundPosition = function(fx) {
         methods.extend({
             up : up,
             down : down,
+            $up : $up,
+            $down : $down,
+            go2 : go2,
             play : play,
             query : query,
             initialize : initialize
@@ -577,23 +637,24 @@ $.fx.step.backgroundPosition = function(fx) {
         var mv_Fn_map = {};
         var exec_Fn_map = {};
         self.extend({
+            debug : req['helper.debug'],
             node_network : node_network,
             mv_Fn_map : mv_Fn_map,
             exec_Fn_map : exec_Fn_map,
         });
         function __eval_code__(code,context){
             try{
-                return function(){
+                return (function(){
                     with(context||window){
                         return eval("("+(code)+")");
                     }
-                }.apply(context||window);
+                }.apply(context||window));
             }catch(e){
                 error('{0}eval处理异常-{1}',code,e);
             }
         }
         function __eval_fn__(fn,context,args){
-            return __eval_code__(fn.toString().replace(/([^{]+\{)(.+?)(\}$)/,'$1 with(context){$2}$3('+(args||'')+')'),context);
+            return __eval_code__(fn.toString().replace(/([^{]+\{)([\n\S\s]+?)(\}$)/,'$1 with(context){$2}$3('+(args||'')+')'),context);
         }
         function __eval__(obj,context,args){
             if( $.isStr(obj) ){
@@ -616,7 +677,7 @@ $.fx.step.backgroundPosition = function(fx) {
         var NEXT = __const__.__continue__,STOP=__const__.__break__,MATCH=__const__.__match__,NOOP=__const__.__noop__;
         function error(desc){
             var d = new Date().toLocaleString();
-            req['format.debug'] && console.warn('['+d+']','[error]','字符串格式化错误 ',desc.formata(Array.copy(arguments,1)));
+            req['helper.debug'] && console.warn('['+d+']','[error]','字符串格式化错误 ',desc.formata(Array.copy(arguments,1)));
         }
         function route_node(node_name,context){
             try{
@@ -626,13 +687,13 @@ $.fx.step.backgroundPosition = function(fx) {
                 if( !cmd.is_match(c) ) return c;
                 //route
                 c = node.__route__(context);
-                if( cmd.is_match(c) ){
+                if( cmd.is_match(c) ){//match sub route
                     //over
                     c = STOP;
                 }else{
+                    req['helper.debug'] && console.info('matched',node_name);
                     c = node.__exec__(context);
                 }
-                req['format.debug'] && console.info(node_name);
                 return c;
             }catch(e){
                 error('nodes-route2-{0}-处理{1}异常-{2}',node_name,e);
@@ -644,25 +705,6 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         function Node(node,node_name){
             
-            function node_matchvalue_parse(context){
-                var ret = {},mv=node.matchvalue;
-                if( mv ){
-                    if( $.isFunction(mv) ){
-                        ret.mv = __eval__(mv,context) ;
-                    }else if( $.isStr(mv) ){
-                        var mv_arr = mv.split(',')
-                        for(var i=0;i<mv_arr.length;i++){
-                            var mv_str = mv_arr[i];
-                            var mvFn = mv_Fn_map[mv_str];
-                            ret.mv = __eval__(mvFn||mv_str,context);
-                            if(mvFn){
-                                ret[mv] = ret.mv;
-                            }
-                        }
-                    }
-                }
-                return ret;
-            }
             //匹配
             function node_match(context){
                 var matches = null,mo=node_matchvalue_parse(context),matchvalue=mo.mv;
@@ -680,17 +722,20 @@ $.fx.step.backgroundPosition = function(fx) {
                     }
                 }else if( $.isStr(node.match) ){
                     var evel_str = node.match;
-                    matches = __eval_code__(evel_str,$.extend(mo,context));
+                    matches = __eval_code__(evel_str,$.extend(mo,context,{params:node.params}));
                 }else if( $.isArray(node.match) ){
-                    var metch_arr = node.match;
-                    for(var i=0;i<metch_arr.length;i++){
+                    var match_arr = node.match;
+                    for(var i=0;i<match_arr.length;i++){
                         var match = match_arr[i];
-                        matches = __eval_code__(match,$.extend(mo,context));
+                        matches = __eval_code__(match,$.extend(mo,context,{params:node.params}));
+                        (self.debug || req['helper.match.debug']) && console.info('|',node.name,i,'node_match',match,matches,mo);
                         if(matches) break;
                     }
                 }else{
                     matches = true;
                 }
+                (self.debug || req['helper.match.debug']) && console.info('|',node.name,'node_match',node.match,matches,mo);
+                matches && console.info('------------>',node.name,'node_match',node.match,matches,mo);
                 var c = node.match == null || !(matches == null || matches === false) ? MATCH : null;
                 return c;
             }
@@ -742,16 +787,37 @@ $.fx.step.backgroundPosition = function(fx) {
                 var c = next_route != null && route_ret != null ? MATCH : null;
                 return c;
             }
+            function node_matchvalue_parse(context){
+                var ret = {},mv=node.matchvalue;
+                if( mv ){
+                    if( $.isFunction(mv) ){
+                        ret.mv = __eval__(mv,context) ;
+                    }else if( $.isStr(mv) ){
+                        var mv_arr = mv.split(';')
+                        for(var i=0;i<mv_arr.length;i++){
+                            var mv_str = mv_arr[i];
+
+                            var ms = mv_str.match(/(.+?)(\((.+?)\))?$/);
+                            var mvFnName = ms[1],args=ms[3]||'';
+                            var mvFn = mv_Fn_map[mvFnName];
+                            ret.mv = __eval__(mvFn||mv_str,context,args);
+                            if(mvFn){
+                                ret[mvFnName] = ret.mv;
+                            }
+                        }
+                    }
+                }
+                return ret;
+            }
             function node_exe_parse(context,exec){
                 var execFn = exec_Fn_map[exec||node.exec],ret=null;
-                execFn && (ret=__eval__(execFn,context));
                 if( execFn ){
                     ret=__eval__(execFn,context);
                 }else{
                    var execFns = node.exec.split(';');
                    for(var i=0;i<execFns.length;i++){
                         var execFnStr = execFns[i];
-                        var ms = execFnStr.match(/(.+?)\((.+?)\)$/);
+                        var ms = execFnStr.match(/(.+?)(\((.+?)\))?$/);
                         var execFnName = ms[1],args=ms[2]||'';
                         execFn = exec_Fn_map[execFnName];
                         if(execFn){
@@ -816,28 +882,69 @@ $.fx.step.backgroundPosition = function(fx) {
 
         $.extend(mv_Fn_map,{
             'p' : 'po.pre.p',
-            'dlevel' : 'ro.dlevel'
+            'cpoints' : 'po.current.points',
+            'rpoints' : 'ro.records.points',
+            'dlevel' : 'po.dlevel',
+            'p_cnt' : function(n){
+                return _.chain(po.current.records).first(n).countBy(function(r){return r.p>=3?'got':'miss'}).value();
+            },
+            'op_cnt' : function(n){
+                return _.chain(ro.records.op).first(n).countBy().value();
+            },
+            'dlevel_cnt' : function(n,l){
+                return _.chain(po.current.records).first(n).countBy(function(r){return r.dlevel<l?'got':'miss'}).value();
+            },
+            'dinput_str' : function(n){
+                return _.chain(po.current.records).first(n).pluck('dinput').value().join('');
+            },
+            'rlevel_str' : function(n){
+                return _.chain(po.current.records).first(n).pluck('rname').value().join('');
+            }
         });
         $.extend(exec_Fn_map,{
             NEXT : NEXT,
             STOP : STOP,
-            UP : function(){po.up();},
-            DOWN : function(){po.down();},
+            UP : function(){po.$up();},
+            DOWN : function(){po.$down();},
             GO2 : function(l){po.go2(l);},
+            CLEAR : function(){ro.clear();},
+            SLOW : function(){ro.slow();},
+            QUICK : function(){ro.quick();},
+            END : function(){ro.end();},
             SLEEP : function(t){ro.sleep(t)}
         });
         $.extend(node_network,{
-            'p5&d5;devel=0' : {
+            '输入峰值极端调整' : {
                 entry : true,
-                matchvalue : 'p,dlevel',
-                match : ['p==5&&dlevel=4','p<1&&dlevel=4'],
+                matchvalue : 'p;dlevel',
+                match : ['p>=3&&dlevel>=1','p<=1&&dlevel>=1'],
                 exec : 'GO2(0);NEXT'
             },
-            'dlevel4&p<1;dlevel=0' : {
+            '执行间隔放慢' : {
                 entry : true,
-                matchvalue : 'p,dlevel',
-                match : 'p<1&&dlevel=4',
-                exec : 'GO2(0);NEXT'
+                matchvalue : 'p_cnt(6);op_cnt(5)',
+                match : 'p_cnt.miss>4&&(op_cnt.s==0 || op_cnt.s==null)',
+                exec : 'SLOW'
+            },
+            '最近3次有中且输入没调整则调整输入并加速执行' : {
+                entry : true,
+                matchvalue : 'p_cnt(3);dlevel_cnt(3,1)',
+                match : 'p_cnt.got>0&&dlevel_cnt.got>2',
+                exec : 'UP;QUIK'
+            },
+            '一个周期结算小于指定数额则停止' : {
+                entry : true,
+                params : {miss_points:-50,got_points:100},
+                matchvalue : 'rpoints',
+                match : ['rpoints<params.miss_points','rpoints>params.got_points'],
+                exec : 'SLEEP;CLEAR'
+            },
+            '本次结算小于/大于指定数额则停止' : {
+                entry : true,
+                params : {miss_points:-100,got_points:200},
+                matchvalue : 'cpoints',
+                match : ['cpoints<params.miss_points','cpoints>params.got_points'],
+                exec : 'END'
             }
         });
         
@@ -850,51 +957,116 @@ $.fx.step.backgroundPosition = function(fx) {
 
     define('suning.yun.diamond.game.rookie',clazz(function(self,methods,env){
         self.extend({
-            ttl : 1000,
-            ttn :30000
+            ttl : 2,
+            ttn :60000,
+            po : suning.yun.diamond.player,
+            runing : false,
+            round : 0,
+            playindex : 0,
+            records : {
+                op : [],
+                points : 0
+            }
         });
         function run(){
+            self.runing = true;
+            self.round ++;
+            self.playindex = 0;
             function tick(){
-                console.info('============>',self.ttl,'秒自动刷新');
-                self.timeid = setTimeout(function(){
-                    tick$play();
-                },self.ttl);
+                if(self.runing){
+                    console.info('============>第',self.round,'轮',self.ttl,'秒后执行第',++self.playindex,'次');
+                    self.timeid = setTimeout(function(){
+                        tick$play();
+                    },self.ttl*1000);   
+                }
             }
             function tick$play(){
-                suning.yun.diamond.player.play(function(){
+                $(window).trigger('help.play.before');
+                suning.yun.diamond.player.play(function(r){
+                    $(window).trigger('help.play.after',[r]);
                     tick();
                 });
             }
             tick();
         }
         function stop(){
+            self.runing = false;
+            console.info('============>停止定时器',self.timeid);
             clearTimeout(self.timeid);
+        }
+        function end(){
+            stop();
         }
         function sleep(ttn){
             stop();
             self.ttn = ttn||self.ttn;
-            setTimeout(function(){
+            self.sleepid && clearTimeout(self.sleepid);
+            self.sleepid = setTimeout(function(){
                 run();
             },self.ttn);
             console.info('============>',self.ttn,'秒后重新开始');
         }
-        function paly_before(pre,po){
-            suning.yun.diamond.game.helper.start({po:po,ro:self,pre:pre});
+        function slow(){
+            self.ttl++;
+            self.records.op.unshift('s');
         }
-        function paly_after(r,po){
-            
+        function quick(){
+            self.ttl = Math.min(self.ttl--,1);
+            self.records.op.unshift('q');
+        }
+        function remember(r){
+            self.records.points += r.dresult;
+            $(window).trigger('ro.play.after',[self]);
+        }
+        function clear(){
+            self.records.points = 0;
+        }
+        function paly_before(){
+            suning.yun.diamond.game.helper.start({po:self.po,ro:self,pre:self.po.pre});
+        }
+        function paly_after(r){
+            if( r.rstate == '0' ){
+                console.info('<<=======啊呀,中枪拉!!!');
+            }
+            remember(r);
         }
         function initialize(){
-            $(window).on('game.play.before',function(e,pre,po){
-                paly_before(pre,po);
+            $(window).on('help.play.before',function(e){
+                paly_before();
             });
-            $(window).on('game.play.after',function(e,r,po){
-                paly_after(r,po);
+            $(window).on('help.play.after',function(e,r){
+                paly_after(r);
             });
+            var lasttime = -1,ktimeid = 0;
+            $(document).on('keydown',function(e){
+                if( e.keyCode == 110 ){
+                    var nowtime = new Date().getTime();
+                    if(lasttime<0){
+                        lasttime = nowtime;
+                    }
+                    var dur = nowtime - lasttime;
+                    if( dur < 500 && dur > 10 ){
+                        run();
+                        clearTimeout(ktimeid);
+                    }else{
+                        ktimeid = setTimeout(function(){
+                            stop();
+                        },500);
+                    }
+                    lasttime = nowtime;
+                    e.preventDefault();
+                }
+            });
+            $(window).trigger('ro.loaded',[self]);
         }
         env.l(initialize);
         methods.extend({
             run : run,
+            slow : slow,
+            quick : quick,
+            end : end,
+            clear : clear,
+            sleep : sleep,
             stop : stop
         });
     }));
