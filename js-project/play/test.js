@@ -99,6 +99,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 wap_play : '//vip.suning.com/m/pointGame/execute.do?dt={encodeURIComponent(token)}&X-CSRF-TOKEN={csrftoken}',
                 query_points : '//vip.suning.com/ajax/list/memberPoints.do',
                 records : '//localhost:8443/demo1-web/simple/add-play-records.jsonp',
+                records_query : '//localhost:8443/demo1-web/simple/query-records.jsonp',
                 analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp',
                 query_player : '//vip.suning.com/ajax/list/memberInfo.do'
             },
@@ -199,12 +200,25 @@ $.fx.step.backgroundPosition = function(fx) {
                 console.info('add play records error');
             });
         }
+        function query_records(params,callback){
+            $.jsonp(self.service.records_query,{params:JSON.stringify(params)},function(json){
+                if( json.success ){
+                    (self.debug) && console.info('query play records success');
+                    callback && callback(json);
+                }else{
+                    (self.debug||!callback)  && console.info('query play records fail');
+                }
+            },function(){
+                console.info('add play records error');
+            });
+        }
         methods.extend({
             play : play,
             wap_play : wap_play,
             query_points:query_points,
             query_player : query_player,
             analyze_recoreds : analyze_recoreds,
+            query_records : query_records,
             records : records
         });
     }));
@@ -336,13 +350,14 @@ $.fx.step.backgroundPosition = function(fx) {
                     width: 33px;
                     height: 47px;
                     display: inline-block;
-                    background: url('//10.24.63.188:7071/play/number1.png') no-repeat;
+                    background: url('//127.0.0.1:7071/play/number1.png') no-repeat;
                     background-position: 0 0;
                 }
                 .t_num span{
                     font-size: 70px;line-height: 41px;
                 }
-                #dchart{height:300px;width:100%;}
+                #dchart,#dchart-history,#records-history{height:300px;width:100%;}
+                #records-history{display:none;}
             </style>
             <div class='game-viewport'>
                 <div id="all">
@@ -351,8 +366,14 @@ $.fx.step.backgroundPosition = function(fx) {
                     输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
                     本次结算<span class="t_num t_num1" cpoints></span>
                     一个周期结算<span class="t_num t_num1" rpoints></span>
+                    <button history-review>历史查看</button>
                 </div>
                 <div id="dchart">
+                </div>
+                <div id="records-history">
+                    <div id="dchart-history">
+                        //history
+                    </div>
                 </div>
             </div>
         */});
@@ -426,7 +447,15 @@ $.fx.step.backgroundPosition = function(fx) {
             $(window).on('ro.loaded',function(e,ro){
                 show_num(ro.records.points,self.el.rpoints,true);
             });
+            $('[history-review]').toggle(function(){
+                $('#records-history').show();
+                $('#dchart').hide();
+            },function(){
+                $('#records-history').hide();
+                $('#dchart').show();
+            });
             suning.yun.diamond.chart.initialize(self.el.chart);
+            $(window).trigger('game.view.loaded');
         }
         methods.extend({
             initialize : initialize,
@@ -434,7 +463,31 @@ $.fx.step.backgroundPosition = function(fx) {
         });
         env.l(initialize);
     }));
-    
+    define('suning.yun.diamond.game.records',clazz(function(self,methods,env){
+
+        function query(params){
+            suning.yun.diamond.query_records(params,function(){
+                
+            });
+        }
+        function initialize(){
+            $(window).on('player.loaded',function(e,playerid){
+                self.playerid = playerid;
+            });
+            var params = {
+                page : 0,
+                pagesize : 50,
+                playerid : self.playerid,
+            };
+            //翻页事件绑定
+            suning.yun.diamond.query_records(params,function(json){
+                //init records chart
+            });
+        }
+        $(window).on('game.view.loaded',function(){
+            initialize();
+        });
+    }));
     define('suning.yun.diamond.player',clazz(function(self,methods,env){
         self.extend({
             debug : req['yun.debug'],
@@ -527,7 +580,7 @@ $.fx.step.backgroundPosition = function(fx) {
             }
             for(var i=0;i<rates.length;i++){
                 var rate = rates[i];
-                rate.prate = parseFloat((rate.pcount/psum).toFixed(3));
+                rate.prate = parseFloat((rate.pcount/psum).toFixed(4));
             }
         }
         function rmap2rates(rmap){
@@ -577,6 +630,7 @@ $.fx.step.backgroundPosition = function(fx) {
             suning.yun.diamond.query_player(function(player){
                 self.playerid = player.userName || player.nickName || player.custNum;
                 console.info('playerid',self.playerid);
+                $(window).trigger('player.loaded',[self.playerid]);
             });
         }
         function initialize(){
