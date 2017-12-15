@@ -75,7 +75,7 @@ $.fx.step.backgroundPosition = function(fx) {
         function extend(o){
             $.extend(this,o);
         }
-        function loader(initFn){$(function(){initFn();});}
+        function loader(initFn){$(function(){setTimeout(function(){initFn();},1000)});}
         var self={extend:extend},methods={extend:extend};
         proto(self,methods,{l:loader});
         $.extend(self,methods);
@@ -99,7 +99,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 wap_play : '//vip.suning.com/m/pointGame/execute.do?dt={encodeURIComponent(token)}&X-CSRF-TOKEN={csrftoken}',
                 query_points : '//vip.suning.com/ajax/list/memberPoints.do',
                 records : '//localhost:8443/demo1-web/simple/add-play-records.jsonp',
-                records_query : '//localhost:8443/demo1-web/simple/query-records.jsonp',
+                records_query : '//localhost:8443/demo1-web/simple/query-play-records.jsonp',
                 analzye : '//localhost:8443/demo1-web/simple/analzye-play-records.jsonp',
                 query_player : '//vip.suning.com/ajax/list/memberInfo.do'
             },
@@ -224,112 +224,134 @@ $.fx.step.backgroundPosition = function(fx) {
     }));
 	
     define('suning.yun.diamond.chart',clazz(function(self,methods){
-        var data = {
-            length : 0,
-            datetime : [],
-            dinput : [],
-            doutput : [],
-            p : []
-        };
-        var option = {
-            title : {
-                text: '--变化',
-                show : false
-            },
-            tooltip : {
-                trigger: 'axis'
-            },
-            legend: {
-                data:['输入','输出','倍数']
-            },
-            toolbox: {
-                show : true,
-                feature : {
-                    mark : {show: true},
-                    dataView : {show: true, readOnly: false},
-                    magicType : {show: true, type: ['line', 'bar']},
-                    restore : {show: true},
-                    saveAsImage : {show: true}
-                }
-            },
-            calculable : true,
-            xAxis : [
-                {
-                    boundaryGap : false,
-                    data : data.datetime
-                }
-            ],
-            yAxis : [
-                {
-                    type : 'value',
-                    name : '钻',
-                    axisLabel : {
-                        formatter: '{value} 钻'
+        function init_data(name){
+            var data = {
+                length : 0,
+                datetime : [],
+                dinput : [],
+                doutput : [],
+                p : []
+            };
+            var option = {
+                title : {
+                    text: '--变化',
+                    show : false
+                },
+                tooltip : {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data:['输入','输出','倍数']
+                },
+                toolbox: {
+                    show : true,
+                    feature : {
+                        mark : {show: true},
+                        dataView : {show: true, readOnly: false},
+                        magicType : {show: true, type: ['line', 'bar']},
+                        restore : {show: true},
+                        saveAsImage : {show: true}
                     }
                 },
-                {
-                    type : 'value',
-                    name : '倍',
-                    axisLabel : {
-                        formatter: '{value} 倍'
+                calculable : true,
+                xAxis : [
+                    {
+                        boundaryGap : false,
+                        data : data.datetime
                     }
-                }
-            ],
-            series : [
-                {
-                    name:'输入',
-                    type:'bar',
-                    barMaxWidth : 30,
-                    barMinHeight : 5,
-                    data:data.dinput
-                },
-                {
-                    name:'输出',
-                    type:'bar',
-                    barMaxWidth : 30,
-                    barMinHeight : 5,
-                    data:data.doutput
-                },
-                {
-                    name:'倍数',
-                    type:'line',
-                    yAxisIndex: 1,
-                    data:data.p
-                }
-            ]
-        };
+                ],
+                yAxis : [
+                    {
+                        type : 'value',
+                        name : '钻',
+                        axisLabel : {
+                            formatter: '{value} 钻'
+                        }
+                    },
+                    {
+                        type : 'value',
+                        name : '倍',
+                        axisLabel : {
+                            formatter: '{value} 倍'
+                        }
+                    }
+                ],
+                series : [
+                    {
+                        name:'输入',
+                        type:'bar',
+                        barMaxWidth : 30,
+                        barMinHeight : 5,
+                        data:data.dinput
+                    },
+                    {
+                        name:'输出',
+                        type:'bar',
+                        barMaxWidth : 30,
+                        barMinHeight : 5,
+                        data:data.doutput
+                    },
+                    {
+                        name:'倍数',
+                        type:'line',
+                        yAxisIndex: 1,
+                        data:data.p
+                    }
+                ]
+            };
+            self[name] = {
+                data : data,
+                option : option
+            };
+        }
         self.extend({
-            max : 50,
-            data : data,
-            option : option
+            max : 50
         });
-        function update(r){
-            if(data.length > self.max ){
-                data.datetime.shift();
-                data.dinput.shift();
-                data.doutput.shift();
-                data.p.shift();
-            }
-            data.datetime.push(r.playtime);
-            data.dinput.push(r.dinput);
-            data.doutput.push(r.doutput);
-            data.p.push(r.p);
-            data.length ++;
+        function update(r,name){
+            with(self[name]){
+                if(data.length > self.max ){
+                    data.datetime.shift();
+                    data.dinput.shift();
+                    data.doutput.shift();
+                    data.p.shift();
+                }
+                data.datetime.push(r.playtime);
+                data.dinput.push(r.dinput);
+                data.doutput.push(r.doutput);
+                data.p.push(r.p);
+                data.length ++;
 
-            option.xAxis[0].data = data.datetime;
-            option.series[0].data = data.dinput;
-            option.series[1].data = data.doutput;
-            option.series[2].data = data.p;
+                option.xAxis[0].data = data.datetime;
+                option.series[0].data = data.dinput;
+                option.series[1].data = data.doutput;
+                option.series[2].data = data.p;
+            }
+        }
+        function load(rs,name){
+            with(self[name]){
+                //data.$clear();
+                for(var i=0;i<rs.length;i++){
+                    var r = rs[i];
+                    r.playtime = new Date(r.playtime).format('yyyy-MM-dd hh:mm:ss');
+                    update(rs[i],name);
+                }
+            }
         }
         function initialize(chartid){
             echarts.registerTheme('macarons',echarts.theme.macarons);
             var dchart = echarts.init(document.getElementById(chartid),'macarons');
-            self.dchart = dchart;
-            dchart.showLoading();
-            $(window).on('chart.load',function(e,r){
-                update(r);
-                dchart.setOption(option);
-                dchart.hideLoading();
+            init_data(chartid);
+            self[chartid].chart = dchart;
+            self[chartid].chart.showLoading();
+            $(window).on('chart.update.'+chartid,function(e,r){
+                update(r,chartid);
+                self[chartid].chart.setOption(self[chartid].option);
+                self[chartid].chart.hideLoading();
+            });
+            $(window).on('chart.load.'+chartid,function(e,rs){
+                load(rs,chartid);
+                self[chartid].chart.setOption(self[chartid].option);
+                self[chartid].chart.hideLoading();
             });
         }
         methods.extend({
@@ -366,7 +388,7 @@ $.fx.step.backgroundPosition = function(fx) {
                     输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
                     本次结算<span class="t_num t_num1" cpoints></span>
                     一个周期结算<span class="t_num t_num1" rpoints></span>
-                    <button history-review>历史查看</button>
+                    <button history-review>历史查看</button><button history-review-pre><</button><button history-review-next>></button>
                 </div>
                 <div id="dchart">
                 </div>
@@ -429,7 +451,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 show_num(r.doutput,self.el.doutput);
                 show_num(po.playindex,self.el.playindex);
                 show_num(po.current.points,self.el.cpoints,true);
-                $(window).trigger('chart.load',[r]);
+                $(window).trigger('chart.load.dchart',[r]);
             });
             $(window).on('dinput.change',function(e,player){
                 show_num(player.dinput,self.el.dinput);
@@ -447,12 +469,21 @@ $.fx.step.backgroundPosition = function(fx) {
             $(window).on('ro.loaded',function(e,ro){
                 show_num(ro.records.points,self.el.rpoints,true);
             });
+            $('#records-history').one('chart.loaded',function(){
+                suning.yun.diamond.game.records.initialize();
+            });
             $('[history-review]').toggle(function(){
-                $('#records-history').show();
+                $('#records-history').show().trigger('chart.loaded');
                 $('#dchart').hide();
             },function(){
                 $('#records-history').hide();
                 $('#dchart').show();
+            });
+            $('[history-review-pre]').click(function(){
+                suning.yun.diamond.game.records.pre();
+            });
+            $('[history-review-next]').click(function(){
+                suning.yun.diamond.game.records.next();
             });
             suning.yun.diamond.chart.initialize(self.el.chart);
             $(window).trigger('game.view.loaded');
@@ -464,28 +495,46 @@ $.fx.step.backgroundPosition = function(fx) {
         env.l(initialize);
     }));
     define('suning.yun.diamond.game.records',clazz(function(self,methods,env){
-
-        function query(params){
-            suning.yun.diamond.query_records(params,function(){
-                
-            });
-        }
-        function initialize(){
-            $(window).on('player.loaded',function(e,playerid){
-                self.playerid = playerid;
-            });
+        self.extend({
+            chartid : 'records-history',
+            page : 0,
+            pagesize : 50
+        });
+        function query(){
+            self.page = Math.max(self.page,0);
             var params = {
-                page : 0,
-                pagesize : 50,
+                page : self.page,
+                pagesize : self.pagesize,
                 playerid : self.playerid,
             };
             //翻页事件绑定
             suning.yun.diamond.query_records(params,function(json){
                 //init records chart
+                $(window).trigger('chart.load.'+self.chartid,[json.list]);
             });
         }
+        function pre(){
+            self.page --;
+            query();
+        }
+        function next(){
+            self.page ++;
+            query();
+        }
+        function initialize(){
+            suning.yun.diamond.chart.initialize(self.chartid);
+            query();
+        }
         $(window).on('game.view.loaded',function(){
-            initialize();
+            //initialize();
+        });
+        $(window).on('player.loaded',function(e,playerid){
+            self.playerid = playerid;
+        });
+        methods.extend({
+            initialize : initialize,
+            next : next,
+            pre : pre
         });
     }));
     define('suning.yun.diamond.player',clazz(function(self,methods,env){
