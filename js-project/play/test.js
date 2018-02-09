@@ -91,6 +91,81 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         return obj;
     }
+    window.$req = function(url,success,error,data,datatype,option){
+        var params = {
+            type: "GET",
+            url: url,
+            cache: false,
+            async: false,
+            data: data || {},
+            dataType: datatype||"json",
+            success: success || $.noop,
+            error: error || $.noop
+        };
+        $.ajax($.extend({}, params, option || {}));
+    }
+    window.$get = function(url,success,error,data,datatype,option){
+        $req(url,success,error,data,datatype,$.extend({},option||{},{type:'GET'}));
+    }
+    window.$post = function(url,data,success,error,datatype,option){
+        $req(url,success,error,data,datatype,$.extend({},option||{},{type:'POST'}));
+    }
+    define('suning.yun.cache',clazz(function(self,methods){
+        self.extend({
+            cache_name : 'suning_yun_cache',
+            config : {}
+        });
+        function $cache_push(name,data){
+            localStorage[name] = JSON.stringify(data||{});
+        }
+        function $cache_pull(name){
+            var data = JSON.parse(localStorage[name]||'{}')||{};
+            return data;
+        }
+        function cache_push(name,data){
+            $cache_push(self.cache_name+'$'+name,data);
+        }
+        function cache_pull(name){
+            return $cache_pull(self.cache_name+'$'+name);
+        }
+        function proto(name){
+            var conf = self.config[name];
+            setInterval(function(){
+                if( config[name].changed ){
+                    var cache = conf.impl.cache();
+                    if( cache ){
+                        cache_push(name,cache);
+                    }
+                    config[name].changed = false;
+                }
+            },conf.interval);
+            $(window).on('cache.changed.'+name,function(){
+                conf.changed = true;
+            });
+            conf.impl.initialize(cache_pull(name));
+        }
+        function initialize(name,impl){
+            self.config[name] = self.config[name] || {changed:false,interval:2000};
+            self.config[name].impl = impl;
+            proto(name);
+        }
+        function changed(name){
+            config[name].changed = true;
+        }
+        self.config = $cache_pull(self.cache_name+'_config');
+        setTimeout(function(){
+            $cache_push(self.cache_name+'_config',self.config);
+        },5000);
+        setInterval(function(){
+            $cache_push(self.cache_name+'_config',self.config);
+        },60000);
+        methods.extend({
+            initialize : initialize,
+            cache_push : cache_push,
+            cache_pull : cache_pull,
+            changed : changed
+        });
+    }));
     define('suning.yun.diamond',clazz(function(self,methods){
         self.extend({
             debug : req['yun.diamond'],
@@ -112,14 +187,15 @@ $.fx.step.backgroundPosition = function(fx) {
                 state:'rstate'
             }
         });
+        var def_data ={rstate:'0',msg:'出错啦'};
         function play(dinput,callback){
             var gameid = $("#gameActivitiesConfigureId").val();
             var params = {dinput:dinput,gameid:gameid,playtime:Date.now().format()};
             var url = self.service.play.format(params);
-            $.get(url,function(json){
+            $get(url,function(json){
                 //success{"awardsResult":1.0,"content":"恭喜您获得10个云钻!","result":"020","resultCode":"GAMEACTIVITIES_DEDUCT_POINT_FAIL","resultType":"1","state":"1"}
                 try{
-                    var data = map(json,self.propmap);
+                    var data = map(json||def_data,self.propmap);
                     if( data.p != null ){
                         var doutput = data.p * params.dinput;
                         data.doutput = doutput;
@@ -136,7 +212,9 @@ $.fx.step.backgroundPosition = function(fx) {
                     console.error(e);
                 }
                 
-            },'json');
+            },function(){
+                callback && callback(params,def_data);
+            });
         }
         function wap_play(dinput,callback){
             bd.rss(function(token) {
@@ -144,9 +222,9 @@ $.fx.step.backgroundPosition = function(fx) {
                 var params = {dinput:dinput,gameid:gameid,csrftoken:csrftoken,token:token,playtime:Date.now().format()};
                 var data1 = {inputNum:dinput,gameActivitiesConfigureId:gameid};
                 var url = self.service.wap_play.format(params);
-                $.post(url,data1,function(json){
+                $post(url,data1,function(json){
                     //success{"awardsResult":1.0,"content":"恭喜您获得10个云钻!","result":"020","resultCode":"GAMEACTIVITIES_DEDUCT_POINT_FAIL","resultType":"1","state":"1"}
-                    var data = map(json,self.propmap);
+                    var data = map(json||def_data,self.propmap);
                     if( data.p != null ){
                         var doutput = data.p * params.dinput;
                         data.doutput = doutput;
@@ -158,6 +236,8 @@ $.fx.step.backgroundPosition = function(fx) {
                     callback && callback(params,data);
                     (self.debug||!callback) && console.table([params]);
                     (self.debug||!callback) && console.table([data]);
+                },function(){
+                    callback && callback(params,def_data);
                 },'json');
             });
         }
@@ -388,11 +468,11 @@ $.fx.step.backgroundPosition = function(fx) {
                     输出<span class="t_num t_num1" doutput><i style="background-position: 0px 0px;"></i></span>
                     本次结算<span class="t_num t_num1" cpoints></span>
                     一个周期结算<span class="t_num t_num1" rpoints></span>
-                    <button history-review>历史查看</button><button history-review-pre><</button><button history-review-next>></button>
+                    <button history-review-pre><</button><button history-review>历史查看</button><button history-review-next>></button>
                 </div>
                 <div id="dchart">
                 </div>
-                <div id="records-history">
+                <div id="records-history" style="display:none;">
                     <div id="dchart-history">
                         //history
                     </div>
@@ -451,7 +531,7 @@ $.fx.step.backgroundPosition = function(fx) {
                 show_num(r.doutput,self.el.doutput);
                 show_num(po.playindex,self.el.playindex);
                 show_num(po.current.points,self.el.cpoints,true);
-                $(window).trigger('chart.load.dchart',[r]);
+                $(window).trigger('chart.update.dchart',[r]);
             });
             $(window).on('dinput.change',function(e,player){
                 show_num(player.dinput,self.el.dinput);
@@ -567,7 +647,8 @@ $.fx.step.backgroundPosition = function(fx) {
             style : {
                 r : "text-shadow: 0 1px 0 #fff,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:5em;color:red;",
                 n : 'color:black;font-size:14px;'   
-            }
+            },
+            cache_name : 'player_current_cache'
         });
         function logStyle(content,styles){
             styles.unshift(content);
@@ -601,9 +682,9 @@ $.fx.step.backgroundPosition = function(fx) {
         }
         //分析
         function analyze(r){
-            r.pre = self.pre;
-            self.pre.next = r;
-            self.pre = r;
+            //r.pre = self.pre;
+            //self.pre.next = r;
+            //self.pre = r;
 
             r.points = self.points = self.points + r.dresult;
             self.current.points += r.dresult;
@@ -702,6 +783,9 @@ $.fx.step.backgroundPosition = function(fx) {
                 }else if( e.keyCode == 17 ){
                     query();
                     e.preventDefault();
+                }else if( e.keyCode >= 97 && e.keyCode <= 101 ){
+                    go2(parseInt(e.key)-1);
+                    e.preventDefault();
                 }
             });
             for(var i = 0; i < self.rlevels.length;i++){
@@ -721,6 +805,19 @@ $.fx.step.backgroundPosition = function(fx) {
                     console.table(self.history.rates);
                 }
             });
+            /*
+            suning.yun.cache.initialize(self.cache_name,{
+                cache : function(){
+                    return self.current;
+                },
+                initialize : function(current){
+                    self.current = current;
+                }
+            });
+            $(window).on('game.play.after',function(e){
+                $().trigger('cache.changed.'+self.cache_name);
+            });
+            */
         }
         env.l(initialize);
         methods.extend({
@@ -863,7 +960,7 @@ $.fx.step.backgroundPosition = function(fx) {
                             }
                         }else if( $.isFunction(route_obj) ){
                             var route_fun = route_obj;
-                            route_matched = route_fun.apply(node,[context,matchvalue]);
+                            route_matched = route_fun.apply(node,[context,matchchvalue]);
                             if( route_matched ){
                                 next_route = route_name;
                                 break;
@@ -1017,6 +1114,9 @@ $.fx.step.backgroundPosition = function(fx) {
             SLEEP : function(t){ro.sleep(t)}
         });
         $.extend(node_network,{
+            '统计' :{
+                entry : true,
+            },
             '输入峰值极端调整' : {
                 entry : true,
                 matchvalue : 'p;dlevel',
@@ -1130,8 +1230,10 @@ $.fx.step.backgroundPosition = function(fx) {
         function paly_after(r){
             if( r.rstate == '0' ){
                 console.info('<<=======啊呀,中枪拉!!!');
+            }else{
+                remember(r);
             }
-            remember(r);
+            
         }
         function initialize(){
             $(window).on('help.play.before',function(e){
@@ -1158,6 +1260,8 @@ $.fx.step.backgroundPosition = function(fx) {
                     }
                     lasttime = nowtime;
                     e.preventDefault();
+                }else if( e.keyCode == 96 ){
+                    end();
                 }
             });
             $(window).trigger('ro.loaded',[self]);

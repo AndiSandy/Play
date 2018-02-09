@@ -969,7 +969,7 @@
   	
   	spring.timer.deamon.run();
 
-  	$.jsonp = function(url,data,callback,callname,method,error){
+  	$.jsonp = function(url,data,success,method,callname,error,callpname){
 		var post = {
 			type: method||"POST",
 			url: url,
@@ -977,11 +977,11 @@
 			async : false,
 			data : data,
 			dataType : "jsonp",
-			jsonp : "callback",
-			jsonpCallback : callname,
-			success: callback,
-			error : error
+			jsonp : callpname||"callback",
+			success: success||$.noop,
+			error : error||$.noop
 		};
+        callname && (post.jsonpCallback=callname);
 		$.ajax(post);
 	}
 
@@ -1121,7 +1121,7 @@
 						DialogShow.graphicalDialog('minos');	
 					}
 				}
-			},'lotteryDrawCallback','GET',function(){
+			},'GET','lotteryDrawCallback',function(){
 				console.info('sigin error')
 			});
 		}
@@ -1137,6 +1137,7 @@
 	function pptvDaka(){
 		//打卡
 		function sign(){
+            /*
 			seajs.use(['mylogin','jquery','md5','svipLayer'], function(mylogin, $, md5,svipLayer){
 				var d = new Date;
 				var index = "";
@@ -1161,6 +1162,136 @@
 					}
 				});
 			});
+            */
+            seajs.use(['jquery','login','user','util/md5','client'],function($,login,user,md5,client){
+                var username = user['info']['UserName']||'',
+                    token = user['info']['token']||'',
+                    isClient = window.external && external.GetObject,
+                    isLogined = login.isLogined(),
+                    deviceid = jQuery.cookie().g("_device_session_id"),
+                    yzArr = [],
+                    urlObj = {
+                        url : 'http://api.usergrowth.pptv.com/doDailyPcardNew',
+                        params : {
+                            username:username,
+                            token:token,
+                            from:isClient?'clt':'web',
+                            version:'unknown',
+                            // infoValue:'',
+                            index:'',
+                            addstr:'',
+                            // mac:'',
+                            channel:'',
+                            suningToken:'',
+                            format:'jsonp'
+                            // appplt:'',
+                            // appid:'',
+                            // appver:''
+                        }
+                    };
+                if(isLogined){
+                    getInit();
+                }else{
+                    console.info('签到时没有登录');
+                }
+
+                function getInit(){
+                    for (var index = "", i = 0; 6 > i; i++) {
+                        var nu = Math.floor(9 * Math.random() + 1);
+                        index += nu;
+                    }
+                    urlObj.params.index = index;
+                    urlObj.params.addstr = md5.hex_md5(encodeURIComponent(username + "$DAILY_PCARD$" + index));
+                    urlObj.params.channel = getUserAgent();
+                    urlObj.params.suningToken = jQuery.cookie().g('_device_session_id');
+                    jQuery.jsonp(urlObj.url,urlObj.params,function(data){
+                        var result = data.result;
+                        var pcardDailyAwards = '',
+                            double = '',
+                            nowGetyunzuan = '',
+                            str = '';
+                        if(result){
+                            pcardDailyAwards = result.pcardDailyAwards&&result.pcardDailyAwards.split(',');
+                            double = result.isVip != 0 ? 2 : 1;
+                            nowGetyunzuan = pcardDailyAwards[result.singlePeriodPcardNum-1]*double;
+                            $.each(pcardDailyAwards,function(index,value){
+                                (index + 1) % 7 == 0 ? '' : $('#li-item'+index).html(value*double);
+                                result.singlePeriodPcardNum-1 > index ? ((index + 1) % 7 == 0 ? $('#li-item'+index).addClass('li-item-noyz7-choose') : $('#li-item'+index).addClass('li-item-choose')) : '';
+                            });
+                            yzArr.push(pcardDailyAwards[6] * double);
+                            yzArr.push(pcardDailyAwards[13] * double);
+                            yzArr.push(pcardDailyAwards[20] * double);
+                            yzArr.push(pcardDailyAwards[27] * double);
+                        }
+                        if(result && nowGetyunzuan && result.singlePeriodPcardNum){
+                            str = '已签到'+result.singlePeriodPcardNum+'天<span class="gainYZC">今日获得'+nowGetyunzuan+'云钻</span>';
+                        }else if(result && nowGetyunzuan){
+                            str = '<span class="gainYZC">今日获得'+nowGetyunzuan+'云钻</span>';
+                        }else if(result && result.singlePeriodPcardNum){
+                            str = '已签到'+result.singlePeriodPcardNum+'天';
+                        }
+                        print(str);
+                        $(".title").html(str);
+                        $(".reward_title").html("您已签到第" + result.singlePeriodPcardNum + "天");
+                        
+                        if(/^([123456789]|1[12])$/.test(data.flag)){
+                            console.log(decodeURIComponent(data.message));
+                            print('签到信息有误，请重新签到');
+                            // 报错提示
+                        }else if(data.flag == 13){
+                            console.info('签到异常');
+                        }else{
+                            // 每天签到只提示一次，10代表重复签到
+                            if(data.flag == 10){
+                                if(result.singlePeriodPcardNum == 28){
+                                    $('.allGetImg').show();
+                                }
+                                return;
+                            }
+                            var rewardStr = "";
+                            if(data.flag == 0){
+                                rewardStr = '<p class="reward_info">今日获得</p>';
+                                rewardStr += nowGetyunzuan != '' ? '<p class="reward_cont">'+ nowGetyunzuan +'云钻</p>' : '';
+                                rewardStr += result.vipDays != '' ? '<p class="reward_cont">PP视频影视会员' + result.vipDays + '天</p>' : '';
+                                rewardStr += result.couponInfo != '' ? '<p class="reward_cont">'+ result.couponInfo +'</p>' : '';
+                                rewardStr += '<p class="reward_result">已存入您的账户</p><div class="reward_btn">我知道了</div>';
+                            }else if(/^1[4567]$/.test(data.flag)){
+                                if(result && result.singlePeriodPcardNum){
+                                    str = '已签到'+result.singlePeriodPcardNum+'天';
+                                }
+                                print.html(str);
+                                rewardStr = '<img class="reward_logo" src="http://static9.pplive.cn/vip/h5/2017/signin/v_20180116092301/images/logo.png" alt=""><p class="reward_result">今日云钻已领完，明天记得早点来哦~</p><div class="reward_btn">我知道了</div>';
+                            }
+                            if(result.singlePeriodPcardNum == 28){
+                                $('.allGetImg').show();
+                            }
+                            $(".reward_content").append(rewardStr);
+                            $(".reward_content").show();
+                            $(".reward_mask").show();
+                            $(".reward_btn").click(function(){
+                                $(".reward_mask").hide();
+                            });  
+                            
+                        }
+                    },'GET',null,null,'cb');
+                }
+                function getUserAgent() {
+                    var sUserAgent = navigator.platform;
+                    var channel;
+                    if(sUserAgent == "Win32" || sUserAgent == "Windows"){
+                        channel = 208000103005;
+                    }else if(sUserAgent == "Mac68K" || sUserAgent == "MacPPC" || sUserAgent == "Macintosh" || sUserAgent == "MacIntel"){
+                        channel = 208000101005;
+                    }else if(sUserAgent == "X11"){
+                        channel = 208000104003;
+                    }else if(String(sUserAgent).indexOf("Linux") > -1){
+                        channel = 208000102003;
+                    }else{
+                        channel = 208000103005;
+                    }
+                    return channel;
+                }
+            });   
 		}
 		function logout(){
 			seajs.use(['user'],function(u){console.info(u);u.logout()});
